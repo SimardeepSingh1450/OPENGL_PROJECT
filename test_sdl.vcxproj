@@ -71,8 +71,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>G:\OPENGL_PROJECTS\test_sdl;C:\Users\Simardeep Singh\Downloads\SDL2-devel-2.30.2-VC\SDL2-2.30.2\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Simardeep Singh\Downloads\SDL2-devel-2.30.2-VC\SDL2-2.30.2\lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\Simardeep Singh\Downloads\SDL2_image-devel-2.8.2-VC\SDL2_image-2.8.2\include;G:\OPENGL_PROJECTS\test_sdl;C:\Users\Simardeep Singh\Downloads\SDL2-devel-2.30.2-VC\SDL2-2.30.2\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Simardeep Singh\Downloads\SDL2_image-devel-2.8.2-VC\SDL2_image-2.8.2\lib\x64;C:\Users\Simardeep Singh\Downloads\SDL2-devel-2.30.2-VC\SDL2-2.30.2\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -112,7 +112,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
