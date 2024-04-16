@@ -17,12 +17,28 @@ struct player {
 	float height;
 	float velocityX;
 	float velocityY;
+	//last-key variable for when a and d are pressed consecutively
+	char lastKey;
+	//These below keys are only for player
 	bool aKeyPressed;
 	bool dKeyPressed;
-} player, enemy;
+	bool wKeyPressed;
+} player;
 
-//last-key variable for when a and d are pressed consecutively
-char lastKey;
+struct enemy {
+	float x;
+	float y;
+	float width;
+	float height;
+	float velocityX;
+	float velocityY;
+	//last-key variable for when left and right are pressed consecutively
+	char lastKey;
+	//These below keys are only for enemy
+	bool leftKeyPressed;
+	bool rightKeyPressed;
+	bool upKeyPressed;
+} enemy;
 
 int initialize_window() {
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -55,6 +71,9 @@ void setup() {
 	player.height = 150;
 	player.velocityY = 400;
 	player.velocityX = 0;
+	player.aKeyPressed = false;
+	player.dKeyPressed = false;
+	player.wKeyPressed = false;
 	//Enemy Initial Position Setup
 	enemy.x = 400;
 	enemy.y = 100;
@@ -67,7 +86,7 @@ void setup() {
 void process_input() {
 	SDL_Event e;
 	SDL_PollEvent(&e);
-
+	
 	switch (e.type) {
 	case SDL_QUIT:
 		game_is_running = FALSE;
@@ -80,13 +99,36 @@ void process_input() {
 		else if (e.key.keysym.sym == SDLK_d) {
 			//player.velocityX = 200;
 			player.dKeyPressed = true;
-			lastKey = 'd';
+			player.lastKey = 'd';
 			break;
 		}
 		else if (e.key.keysym.sym == SDLK_a) {
 			//player.velocityX = -200;
 			player.aKeyPressed = true;
-			lastKey = 'a';
+			player.lastKey = 'a';
+			break;
+		}
+		else if (e.key.keysym.sym == SDLK_w) {
+			//player.velocityX = -200;
+			player.wKeyPressed = true;
+			player.lastKey = 'w';
+			player.velocityY = -2000;
+			break;
+		}
+		else if(e.key.keysym.sym == SDLK_LEFT){
+			enemy.leftKeyPressed = true;
+			enemy.lastKey = 'l';
+			break;
+		}
+		else if (e.key.keysym.sym == SDLK_RIGHT) {
+			enemy.rightKeyPressed = true;
+			enemy.lastKey = 'r';
+			break;
+		}
+		else if (e.key.keysym.sym == SDLK_UP) {
+			enemy.upKeyPressed = true;
+			enemy.lastKey = 'u';
+			enemy.velocityY = -2000;
 			break;
 		}
 	case SDL_KEYUP:
@@ -100,7 +142,25 @@ void process_input() {
 			player.aKeyPressed = false;
 			break;
 		}
+		else if (e.key.keysym.sym == SDLK_w) {
+			//player.velocityX = -200;
+			player.wKeyPressed = false;
+			break;
+		}
+		else if (e.key.keysym.sym == SDLK_LEFT) {
+			enemy.leftKeyPressed = false;
+			break;
+		}
+		else if (e.key.keysym.sym == SDLK_RIGHT) {
+			enemy.rightKeyPressed = false;
+			break;
+		}
+		else if (e.key.keysym.sym == SDLK_UP) {
+			enemy.upKeyPressed = false;
+			break;
+		}
 	}
+	
 }
 
 /*
@@ -154,11 +214,11 @@ void playerUpdate() {
 
 	//Migrated A-KEY and D-KEY pressed logic from switch statement to here for smoother player movement
 	player.velocityX = 0;
-	if (player.aKeyPressed == true && lastKey == 'a') {
-		player.velocityX = -200;
+	if (player.aKeyPressed == true) {
+		player.velocityX = -400;
 	}
-	else if (player.dKeyPressed == true && lastKey == 'd') {
-		player.velocityX = 200;
+	else if (player.dKeyPressed == true) {
+		player.velocityX = 400;
 	}
 }
 
@@ -175,6 +235,8 @@ void enemyUpdate() {
 	//logic to keep a fixed timestamp/frame-rate
 	last_frame_time = SDL_GetTicks();//SDL_GetTicks() returns the time passed since SDL_Init
 
+	//enemy movement logic
+	enemy.x += enemy.velocityX * delta_time;
 	//Enemy stop at ground gravity logic
 	enemy.y += enemy.velocityY * delta_time;
 	if (enemy.y + enemy.height + enemy.velocityY * delta_time >= WINDOW_HEIGHT) {
@@ -182,6 +244,15 @@ void enemyUpdate() {
 	}
 	else {
 		enemy.velocityY += GRAVITY;
+	}
+
+	//Migrated A-KEY and D-KEY pressed logic from switch statement to here for smoother player movement
+	enemy.velocityX = 0;
+	if (enemy.leftKeyPressed == true) {
+		enemy.velocityX = -400;
+	}
+	else if (enemy.rightKeyPressed == true) {
+		enemy.velocityX = 400;
 	}
 }
 
