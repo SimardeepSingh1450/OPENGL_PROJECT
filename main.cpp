@@ -17,7 +17,12 @@ struct player {
 	float height;
 	float velocityX;
 	float velocityY;
+	bool aKeyPressed;
+	bool dKeyPressed;
 } player, enemy;
+
+//last-key variable for when a and d are pressed consecutively
+char lastKey;
 
 int initialize_window() {
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -73,20 +78,26 @@ void process_input() {
 			break;
 		}
 		else if (e.key.keysym.sym == SDLK_d) {
-			player.velocityX = 200;
+			//player.velocityX = 200;
+			player.dKeyPressed = true;
+			lastKey = 'd';
 			break;
 		}
 		else if (e.key.keysym.sym == SDLK_a) {
-			player.velocityX = -200;
+			//player.velocityX = -200;
+			player.aKeyPressed = true;
+			lastKey = 'a';
 			break;
 		}
 	case SDL_KEYUP:
 		if (e.key.keysym.sym == SDLK_d) {
-			player.velocityX = 0;
+			//player.velocityX = 0;
+			player.dKeyPressed = false;
 			break;
 		}
 		else if (e.key.keysym.sym == SDLK_a) {
-			player.velocityX = 0;
+			//player.velocityX = 0;
+			player.aKeyPressed = false;
 			break;
 		}
 	}
@@ -139,6 +150,15 @@ void playerUpdate() {
 	}
 	else {
 		player.velocityY += GRAVITY;
+	}
+
+	//Migrated A-KEY and D-KEY pressed logic from switch statement to here for smoother player movement
+	player.velocityX = 0;
+	if (player.aKeyPressed == true && lastKey == 'a') {
+		player.velocityX = -200;
+	}
+	else if (player.dKeyPressed == true && lastKey == 'd') {
+		player.velocityX = 200;
 	}
 }
 
