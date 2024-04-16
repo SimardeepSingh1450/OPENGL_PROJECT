@@ -3,9 +3,11 @@
 #define FALSE 0
 #define TRUE 1
 
-#define WINDOW_WIDTH 640
-#define WINDOW_HEIGHT 480
+#define WINDOW_WIDTH 1024
+#define WINDOW_HEIGHT 576
 
-#define FPS 30
+#define FPS 60
 //Time - 1000/30 = 33.333 millis
 #define FRAME_TARGET_TIME (1000/FPS)
+
+#define GRAVITY 100

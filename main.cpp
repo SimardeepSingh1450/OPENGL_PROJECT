@@ -10,12 +10,14 @@ SDL_Renderer* renderer = NULL;
 
 int last_frame_time = 0;
 
-struct ball {
+struct player {
 	float x;
 	float y;
 	float width;
 	float height;
-} ball;
+	float velocityX;
+	float velocityY;
+} player, enemy;
 
 int initialize_window() {
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -41,10 +43,20 @@ int initialize_window() {
 }
 
 void setup() {
-	ball.x = 20;
-	ball.y = 20;
-	ball.width = 15;
-	ball.height = 15;
+	//Player Initial Position Setup
+	player.x = 0;
+	player.y = 0;
+	player.width = 50;
+	player.height = 150;
+	player.velocityY = 400;
+	player.velocityX = 0;
+	//Enemy Initial Position Setup
+	enemy.x = 400;
+	enemy.y = 100;
+	enemy.width = 50;
+	enemy.height = 150;
+	enemy.velocityX = 0;
+	enemy.velocityY = 0;
 }
 
 void process_input() {
@@ -60,9 +72,14 @@ void process_input() {
 			game_is_running = FALSE;
 			break;
 		}
+		else if (e.key.keysym.sym == SDLK_d) {
+			player.velocityX = 200;
+			break;
+		}
 	}
 }
 
+/*
 void update() {
 	//waste some time or sleep until we reach target frame
 	//while (!SDL_TICKS_PASSED(SDL_GetTicks(), last_frame_time + FRAME_TARGET_TIME));//execution locked for some time
@@ -79,8 +96,60 @@ void update() {
 	//logic to keep a fixed timestamp/frame-rate
 	last_frame_time = SDL_GetTicks();//SDL_GetTicks() returns the time passed since SDL_Init
 
-	ball.x += 70*delta_time;
-	ball.y += 70*delta_time;
+	player.x += 70*delta_time;
+	player.y += 70*delta_time;
+
+	enemy.x += 70 * delta_time;
+	enemy.y += 70 * delta_time;
+}
+*/
+//Segragating PlayerUpdate and EnemyUpdate Functions
+void playerUpdate() {
+	//Instead of while loop burning out CPU resources, we use SDL_Delay
+	int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - last_frame_time);
+	if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME) {
+		SDL_Delay(time_to_wait);
+	}
+
+	//delta time factor - factor to be used to update all my objects smoothly
+	float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0f;
+
+	//logic to keep a fixed timestamp/frame-rate
+	last_frame_time = SDL_GetTicks();//SDL_GetTicks() returns the time passed since SDL_Init
+	
+	//Player moving along X axis on D KEYDOWN
+	player.x += player.velocityX*delta_time;
+	//Player stop at ground gravity logic
+	player.y += player.velocityY*delta_time;
+	if (player.y + player.height + player.velocityY*delta_time >= WINDOW_HEIGHT) {
+		player.velocityY = 0;
+	}
+	else {
+		player.velocityY += GRAVITY;
+	}
+}
+
+void enemyUpdate() {
+	//Instead of while loop burning out CPU resources, we use SDL_Delay
+	int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - last_frame_time);
+	if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME) {
+		SDL_Delay(time_to_wait);
+	}
+
+	//delta time factor - factor to be used to update all my objects smoothly
+	float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0f;
+
+	//logic to keep a fixed timestamp/frame-rate
+	last_frame_time = SDL_GetTicks();//SDL_GetTicks() returns the time passed since SDL_Init
+
+	//Enemy stop at ground gravity logic
+	enemy.y += enemy.velocityY * delta_time;
+	if (enemy.y + enemy.height + enemy.velocityY * delta_time >= WINDOW_HEIGHT) {
+		enemy.velocityY = 0;
+	}
+	else {
+		enemy.velocityY += GRAVITY;
+	}
 }
 
 void render() {
@@ -90,12 +159,16 @@ void render() {
 
 	//HERE BELOW IS THE PART WHERE WE CAN START DRAWING OUR GAME OBJECTS
 	//Draw a rectangle
-	SDL_Rect ball_rect = {(int)ball.x,(int)ball.y,(int)ball.width,(int)ball.height};
-
+	SDL_Rect player_rect = {(int)player.x,(int)player.y,(int)player.width,(int)player.height};
 	//Before rendering the color, set the rendercolor so that it does not render as black again because we allocated background earlier black
 	SDL_SetRenderDrawColor(renderer,255,255,255,255);
 	//Render the rectangle
-	SDL_RenderFillRect(renderer, &ball_rect);
+	SDL_RenderFillRect(renderer, &player_rect);
+
+	//Draw enemy rectangle
+	SDL_Rect enemy_rect = { (int)enemy.x,(int)enemy.y,(int)enemy.width,(int)enemy.height };
+	//Render the rectangle
+	SDL_RenderFillRect(renderer, &enemy_rect);
 
 	SDL_RenderPresent(renderer);//Swapping out the front buffer with back buffer
 }
@@ -113,7 +186,8 @@ int main(int argc,char* argv[]) {
 
 	while (game_is_running) {
 		process_input();
-		update();
+		playerUpdate();
+		enemyUpdate();
 		render();
 	}
 
