@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{c362e1da-b11b-4cf9-a874-c115ae0bf032}</ProjectGuid>
-    <RootNamespace>testsdl</RootNamespace>
+    <ProjectGuid>{ee9fb037-85eb-4d55-8fa0-e45e44a55aab}</ProjectGuid>
+    <RootNamespace>layfootut</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -71,7 +71,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\Simardeep Singh\Downloads\SDL2_image-devel-2.8.2-VC\SDL2_image-2.8.2\include;G:\OPENGL_PROJECTS\test_sdl;C:\Users\Simardeep Singh\Downloads\SDL2-devel-2.30.2-VC\SDL2-2.30.2\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Simardeep Singh\Downloads\SDL2_image-devel-2.8.2-VC\SDL2_image-2.8.2\include;C:\Users\Simardeep Singh\Downloads\SDL2-devel-2.30.2-VC\SDL2-2.30.2\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Simardeep Singh\Downloads\SDL2_image-devel-2.8.2-VC\SDL2_image-2.8.2\lib\x64;C:\Users\Simardeep Singh\Downloads\SDL2-devel-2.30.2-VC\SDL2-2.30.2\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -113,6 +113,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\Simardeep Singh\Downloads\SDL2-devel-2.30.2-VC\SDL2-2.30.2\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -132,11 +133,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="C:\Users\Simardeep Singh\Downloads\01_hello_SDL\01_hello_SDL\main.cpp" />
-    <ClCompile Include="Engine.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Sprite.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Engine.h" />
+    <ClInclude Include="constants.h" />
+    <ClInclude Include="Sprite.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
