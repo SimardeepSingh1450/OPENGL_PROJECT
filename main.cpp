@@ -76,6 +76,19 @@ void process_input() {
 			player.velocityX = 200;
 			break;
 		}
+		else if (e.key.keysym.sym == SDLK_a) {
+			player.velocityX = -200;
+			break;
+		}
+	case SDL_KEYUP:
+		if (e.key.keysym.sym == SDLK_d) {
+			player.velocityX = 0;
+			break;
+		}
+		else if (e.key.keysym.sym == SDLK_a) {
+			player.velocityX = 0;
+			break;
+		}
 	}
 }
 
