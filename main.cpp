@@ -4,6 +4,9 @@
 #undef main
 #include "constants.h"
 
+#include<chrono>
+#include<thread>
+
 int game_is_running = FALSE;
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
@@ -23,6 +26,13 @@ struct player {
 	bool aKeyPressed;
 	bool dKeyPressed;
 	bool wKeyPressed;
+	//Attack box
+	float attackBoxPositionX;
+	float attackBoxPositionY;
+	float attackBoxWidth;
+	float attackBoxHeight;
+	//isAttacking Condition
+	bool isAttacking;
 } player;
 
 struct enemy {
@@ -74,6 +84,12 @@ void setup() {
 	player.aKeyPressed = false;
 	player.dKeyPressed = false;
 	player.wKeyPressed = false;
+	player.attackBoxHeight = 50;
+	player.attackBoxWidth = 100;
+	player.attackBoxPositionX = player.x;
+	player.attackBoxPositionY = player.y;
+	player.isAttacking = false;
+
 	//Enemy Initial Position Setup
 	enemy.x = 400;
 	enemy.y = 100;
@@ -81,6 +97,11 @@ void setup() {
 	enemy.height = 150;
 	enemy.velocityX = 0;
 	enemy.velocityY = 0;
+}
+
+void playerAttack() {
+	//Keep on resetting playerAttack to false
+	player.isAttacking = false;
 }
 
 void process_input() {
@@ -129,6 +150,11 @@ void process_input() {
 			enemy.upKeyPressed = true;
 			enemy.lastKey = 'u';
 			enemy.velocityY = -2000;
+			break;
+		}
+		else if (e.key.keysym.sym == SDLK_SPACE) {
+			//SDL_Log("Spacebar pressed\n");
+			player.isAttacking = true;
 			break;
 		}
 	case SDL_KEYUP:
@@ -203,8 +229,12 @@ void playerUpdate() {
 	
 	//Player moving along X axis on D KEYDOWN
 	player.x += player.velocityX*delta_time;
+	//Updating attack box position X
+	player.attackBoxPositionX = player.x;
+
 	//Player stop at ground gravity logic
 	player.y += player.velocityY*delta_time;
+	player.attackBoxPositionY = player.y;
 	if (player.y + player.height + player.velocityY*delta_time >= WINDOW_HEIGHT) {
 		player.velocityY = 0;
 	}
@@ -219,6 +249,13 @@ void playerUpdate() {
 	}
 	else if (player.dKeyPressed == true) {
 		player.velocityX = 400;
+	}
+
+	//Player Attack (Collision Detection with Enemy)
+	bool xCollisionCondition = player.attackBoxPositionX + player.attackBoxWidth >= enemy.x && player.attackBoxPositionX <= enemy.x + enemy.width;
+	bool yCollisionCondition = player.attackBoxPositionY + player.attackBoxHeight >= enemy.y && player.attackBoxPositionY <= enemy.y + enemy.height;
+	if (xCollisionCondition && yCollisionCondition && player.isAttacking==true) {
+		SDL_Log("Player attacked enemy!! \n");
 	}
 }
 
@@ -265,14 +302,26 @@ void render() {
 	//Draw a rectangle
 	SDL_Rect player_rect = {(int)player.x,(int)player.y,(int)player.width,(int)player.height};
 	//Before rendering the color, set the rendercolor so that it does not render as black again because we allocated background earlier black
-	SDL_SetRenderDrawColor(renderer,255,255,255,255);
+	SDL_SetRenderDrawColor(renderer,255,0,0,0);
 	//Render the rectangle
 	SDL_RenderFillRect(renderer, &player_rect);
 
 	//Draw enemy rectangle
 	SDL_Rect enemy_rect = { (int)enemy.x,(int)enemy.y,(int)enemy.width,(int)enemy.height };
+	//Assigning color to enemy
+	SDL_SetRenderDrawColor(renderer, 0, 0, 255, 0);
+
 	//Render the rectangle
 	SDL_RenderFillRect(renderer, &enemy_rect);
+
+	//Render the rectangle only when player is attacking
+	if (player.isAttacking == true) {
+		//Assigning color to attack box
+		SDL_SetRenderDrawColor(renderer, 0, 255, 0, 0);
+		//Render the attack box for player
+		SDL_Rect attackBoxPlayer = { (int)player.x,(int)player.y,(int)player.attackBoxWidth,(int)player.attackBoxHeight };
+		SDL_RenderFillRect(renderer, &attackBoxPlayer);
+	}
 
 	SDL_RenderPresent(renderer);//Swapping out the front buffer with back buffer
 }
@@ -291,6 +340,7 @@ int main(int argc,char* argv[]) {
 	while (game_is_running) {
 		process_input();
 		playerUpdate();
+		playerAttack();
 		enemyUpdate();
 		render();
 	}
