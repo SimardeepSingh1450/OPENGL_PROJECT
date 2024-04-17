@@ -22,6 +22,8 @@ struct Player {
     float attackBoxWidth;
     float attackBoxHeight;
     bool isAttacking;
+    // Add a variable to keep track of whether the attack timer is running
+    bool attackTimerRunning;
 } player;
 
 struct Enemy {
@@ -35,6 +37,13 @@ struct Enemy {
     bool leftKeyPressed;
     bool rightKeyPressed;
     bool upKeyPressed;
+    float attackBoxPositionX;
+    float attackBoxPositionY;
+    float attackBoxWidth;
+    float attackBoxHeight;
+    bool isAttacking;
+    // Add a variable to keep track of whether the attack timer is running
+    bool attackTimerRunning;
 } enemy;
 
 void setup() {
@@ -52,6 +61,7 @@ void setup() {
     player.attackBoxPositionX = player.x;
     player.attackBoxPositionY = player.y;
     player.isAttacking = false;
+    player.attackTimerRunning = false;//attack timer for toggle
 
     enemy.x = 400;
     enemy.y = 0;
@@ -61,15 +71,23 @@ void setup() {
     enemy.velocityY = 400;
     enemy.leftKeyPressed = false;
     enemy.rightKeyPressed = false;
+    enemy.attackBoxHeight = 50;
+    enemy.attackBoxWidth = 100;
+    enemy.attackBoxPositionX = enemy.x;
+    enemy.attackBoxPositionY = enemy.y;
+    enemy.isAttacking = false;
+    enemy.attackTimerRunning = false;//attack timer for toggle
 }
 
-// Add a variable to keep track of whether the attack timer is running
-bool attackTimerRunning = false;
-
 // Function to toggle the isAttacking variable
-void toggleIsAttacking(int value) {
+void PlayertoggleIsAttacking(int value) {
     player.isAttacking = !player.isAttacking;
-    attackTimerRunning = false; // Reset the timer flag
+    player.attackTimerRunning = false; // Reset the timer flag
+}
+
+void EnemytoggleIsAttacking(int value) {
+    enemy.isAttacking = !enemy.isAttacking;
+    enemy.attackTimerRunning = false; // Reset the timer flag
 }
 
 void process_input(unsigned char key, int, int) {
@@ -90,9 +108,9 @@ void process_input(unsigned char key, int, int) {
     case ' ':
         //printf("spacebar pressed\n");
         player.isAttacking = true;
-        if (!attackTimerRunning) {
-            glutTimerFunc(100, toggleIsAttacking, 0); // Call toggleIsAttacking after 100 milliseconds
-            attackTimerRunning = true; // Set the timer flag
+        if (!player.attackTimerRunning) {
+            glutTimerFunc(100, PlayertoggleIsAttacking, 0); // Call toggleIsAttacking after 100 milliseconds
+            player.attackTimerRunning = true; // Set the timer flag
         }
         //player.isAttacking = true;
         break;
@@ -114,12 +132,14 @@ void special(int key, int, int) {
         enemy.lastKey = 'u';
         enemy.velocityY -= 2000;
         break;
+    case GLUT_KEY_DOWN: // down arrow key
+        enemy.isAttacking = true;
+        if (!enemy.attackTimerRunning) {
+            glutTimerFunc(100, EnemytoggleIsAttacking, 0); // Call toggleIsAttacking after 100 milliseconds
+            enemy.attackTimerRunning = true; // Set the timer flag
+        }
+        break;
     }
-}
-
-
-void playerAttack() {
-    player.isAttacking = false;
 }
 
 void update() {
@@ -172,8 +192,12 @@ void update() {
         enemy.velocityX = 400;
     }
 
-    //Reset the attack to false
-    //playerAttack();
+    //Enemy-Attack Collision Detection
+    bool xCollisionCondition2 = (enemy.x - 50) >= player.x && (enemy.x-50) <= player.x + player.width;
+    bool yCollisionCondition2 = enemy.y+50 >= player.y;
+    if (xCollisionCondition2 && yCollisionCondition2 && enemy.isAttacking == true) {
+        printf("Enemy attacked Player!! \n");
+    }
 }
 
 void render() {
@@ -194,6 +218,7 @@ void render() {
     glVertex2f(enemy.x, WINDOW_HEIGHT - enemy.y - enemy.height);
     glEnd();
 
+    //Player Attack Box
     if (player.isAttacking == true) {
         glColor3f(0.0f, 1.0f, 0.0f);
         glBegin(GL_QUADS);
@@ -201,6 +226,16 @@ void render() {
         glVertex2f(player.x + player.attackBoxWidth, WINDOW_HEIGHT - player.y);
         glVertex2f(player.x + player.attackBoxWidth, WINDOW_HEIGHT - player.y - player.attackBoxHeight);
         glVertex2f(player.x, WINDOW_HEIGHT - player.y - player.attackBoxHeight);
+        glEnd();
+    }
+    //Enemy Attack Box
+    if (enemy.isAttacking == true) {
+        glColor3f(0.0f, 1.0f, 0.0f);
+        glBegin(GL_QUADS);
+        glVertex2f(enemy.x - 50, WINDOW_HEIGHT - enemy.y);
+        glVertex2f(enemy.x - 50 + enemy.attackBoxWidth, WINDOW_HEIGHT - enemy.y);
+        glVertex2f(enemy.x - 50 + enemy.attackBoxWidth, WINDOW_HEIGHT - enemy.y - enemy.attackBoxHeight);
+        glVertex2f(enemy.x - 50 , WINDOW_HEIGHT - enemy.y - enemy.attackBoxHeight);
         glEnd();
     }
 
@@ -266,7 +301,7 @@ int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
     glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
-    glutCreateWindow("SDL to GLUT Conversion");
+    glutCreateWindow("2D FIGHTING GAME");
 
     init();
     setup();
