@@ -63,6 +63,15 @@ void setup() {
     enemy.rightKeyPressed = false;
 }
 
+// Add a variable to keep track of whether the attack timer is running
+bool attackTimerRunning = false;
+
+// Function to toggle the isAttacking variable
+void toggleIsAttacking(int value) {
+    player.isAttacking = !player.isAttacking;
+    attackTimerRunning = false; // Reset the timer flag
+}
+
 void process_input(unsigned char key, int, int) {
     switch (key) {
     case 'd':
@@ -81,6 +90,11 @@ void process_input(unsigned char key, int, int) {
     case ' ':
         //printf("spacebar pressed\n");
         player.isAttacking = true;
+        if (!attackTimerRunning) {
+            glutTimerFunc(100, toggleIsAttacking, 0); // Call toggleIsAttacking after 100 milliseconds
+            attackTimerRunning = true; // Set the timer flag
+        }
+        //player.isAttacking = true;
         break;
     }
 }
@@ -133,7 +147,12 @@ void update() {
         player.velocityX = 400;
     }
 
-    playerAttack();
+    //Player-Attack Colision Detection
+    bool xCollisionCondition = player.attackBoxPositionX + player.attackBoxWidth >= enemy.x && player.attackBoxPositionX <= enemy.x + enemy.width;
+    bool yCollisionCondition = player.attackBoxPositionY + player.attackBoxHeight >= enemy.y && player.attackBoxPositionY <= (enemy.y + enemy.height);
+    if (xCollisionCondition && yCollisionCondition && player.isAttacking == true) {
+        printf("Player attacked enemy!! \n");
+    }
 
     //Enemy Logic
     enemy.x += enemy.velocityX * delta_time;
@@ -152,6 +171,9 @@ void update() {
     else if (enemy.rightKeyPressed == true) {
         enemy.velocityX = 400;
     }
+
+    //Reset the attack to false
+    //playerAttack();
 }
 
 void render() {
@@ -172,15 +194,15 @@ void render() {
     glVertex2f(enemy.x, WINDOW_HEIGHT - enemy.y - enemy.height);
     glEnd();
 
-    //if (player.isAttacking == true) {
-    glColor3f(0.0f, 1.0f, 0.0f);
-    glBegin(GL_QUADS);
-    glVertex2f(player.x, WINDOW_HEIGHT - player.y);
-    glVertex2f(player.x + player.attackBoxWidth, WINDOW_HEIGHT - player.y);
-    glVertex2f(player.x + player.attackBoxWidth, WINDOW_HEIGHT - player.y - player.attackBoxHeight);
-    glVertex2f(player.x, WINDOW_HEIGHT - player.y - player.attackBoxHeight);
-    glEnd();
-    //}
+    if (player.isAttacking == true) {
+        glColor3f(0.0f, 1.0f, 0.0f);
+        glBegin(GL_QUADS);
+        glVertex2f(player.x, WINDOW_HEIGHT - player.y);
+        glVertex2f(player.x + player.attackBoxWidth, WINDOW_HEIGHT - player.y);
+        glVertex2f(player.x + player.attackBoxWidth, WINDOW_HEIGHT - player.y - player.attackBoxHeight);
+        glVertex2f(player.x, WINDOW_HEIGHT - player.y - player.attackBoxHeight);
+        glEnd();
+    }
 
     glutSwapBuffers();
 }
