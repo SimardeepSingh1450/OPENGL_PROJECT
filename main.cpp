@@ -24,6 +24,9 @@ struct Player {
     bool isAttacking;
     // Add a variable to keep track of whether the attack timer is running
     bool attackTimerRunning;
+    //Health Bar
+    float healthBarWidth;
+    float healthBarHeight;
 } player;
 
 struct Enemy {
@@ -44,6 +47,9 @@ struct Enemy {
     bool isAttacking;
     // Add a variable to keep track of whether the attack timer is running
     bool attackTimerRunning;
+    //Health Bar
+    float healthBarWidth;
+    float healthBarHeight;
 } enemy;
 
 void setup() {
@@ -62,6 +68,8 @@ void setup() {
     player.attackBoxPositionY = player.y;
     player.isAttacking = false;
     player.attackTimerRunning = false;//attack timer for toggle
+    player.healthBarHeight = 50;
+    player.healthBarWidth = 500;
 
     enemy.x = 400;
     enemy.y = 0;
@@ -77,6 +85,8 @@ void setup() {
     enemy.attackBoxPositionY = enemy.y;
     enemy.isAttacking = false;
     enemy.attackTimerRunning = false;//attack timer for toggle
+    enemy.healthBarHeight = 50;
+    enemy.healthBarWidth = 500;
 }
 
 // Function to toggle the isAttacking variable
@@ -171,6 +181,8 @@ void update() {
     bool xCollisionCondition = player.attackBoxPositionX + player.attackBoxWidth >= enemy.x && player.attackBoxPositionX <= enemy.x + enemy.width;
     bool yCollisionCondition = player.attackBoxPositionY + player.attackBoxHeight >= enemy.y && player.attackBoxPositionY <= (enemy.y + enemy.height);
     if (xCollisionCondition && yCollisionCondition && player.isAttacking == true) {
+        //Reduce enemy health width
+        enemy.healthBarWidth -= enemy.healthBarWidth * 0.10;
         printf("Player attacked enemy!! \n");
     }
 
@@ -196,6 +208,8 @@ void update() {
     bool xCollisionCondition2 = (enemy.x - 50) >= player.x && (enemy.x-50) <= player.x + player.width;
     bool yCollisionCondition2 = enemy.y+50 >= player.y;
     if (xCollisionCondition2 && yCollisionCondition2 && enemy.isAttacking == true) {
+        //Reduce player health width
+        player.healthBarWidth -= player.healthBarWidth * 0.10;
         printf("Enemy attacked Player!! \n");
     }
 }
@@ -238,6 +252,26 @@ void render() {
         glVertex2f(enemy.x - 50 , WINDOW_HEIGHT - enemy.y - enemy.attackBoxHeight);
         glEnd();
     }
+
+    //Drawing Health bars
+    //Player Health Bar
+    glColor3f(1.0f, 1.0f, 0.0f);
+    glBegin(GL_QUADS);
+    glVertex2f(5,WINDOW_HEIGHT - 5);//top left vertex
+    glVertex2f(5 + player.healthBarWidth, WINDOW_HEIGHT - 5);
+    glVertex2f(5 + player.healthBarWidth, WINDOW_HEIGHT - 5 - player.healthBarHeight);
+    glVertex2f(5,WINDOW_HEIGHT - 5 - player.healthBarHeight);
+    glEnd();
+
+    //Enemy Health Bar
+    glColor3f(1.0f, 1.0f, 0.0f);
+    glBegin(GL_QUADS);
+    glVertex2f(WINDOW_WIDTH - 5 , WINDOW_HEIGHT - 5);//top left vertex
+    glVertex2f(WINDOW_WIDTH - 5 - enemy.healthBarWidth, WINDOW_HEIGHT - 5);
+    glVertex2f(WINDOW_WIDTH - 5 - enemy.healthBarWidth, WINDOW_HEIGHT - 5 - enemy.healthBarHeight);
+    glVertex2f(WINDOW_WIDTH - 5, WINDOW_HEIGHT - 5 - enemy.healthBarHeight);
+    glEnd();
+
 
     glutSwapBuffers();
 }
