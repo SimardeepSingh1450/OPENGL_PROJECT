@@ -183,7 +183,13 @@ void update() {
     if (xCollisionCondition && yCollisionCondition && player.isAttacking == true) {
         //Reduce enemy health width
         enemy.healthBarWidth -= enemy.healthBarWidth * 0.10;
-        printf("Player attacked enemy!! \n");
+        //printf("Player attacked enemy!! \n");
+
+        //printf("Enemy Health: %f \n",enemy.healthBarWidth);
+        if (enemy.healthBarWidth <= 0.03) {
+            printf("Player Won!!\n");
+            exit(0);
+        }
     }
 
     //Enemy Logic
@@ -210,7 +216,12 @@ void update() {
     if (xCollisionCondition2 && yCollisionCondition2 && enemy.isAttacking == true) {
         //Reduce player health width
         player.healthBarWidth -= player.healthBarWidth * 0.10;
-        printf("Enemy attacked Player!! \n");
+        //printf("Enemy attacked Player!! \n");
+
+        if (player.healthBarWidth <= 0.03) {
+            printf("Enemy Won!!\n");
+            exit(0);
+        }
     }
 }
 
