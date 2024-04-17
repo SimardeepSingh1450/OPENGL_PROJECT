@@ -1,351 +1,267 @@
-#include<stdio.h>
-#include<SDL.h>
-#include<SDL_image.h>
-#undef main
+#include <GL/glut.h>
+#include <stdio.h>
 #include "constants.h"
-
-#include<chrono>
-#include<thread>
-
-int game_is_running = FALSE;
-SDL_Window* window = NULL;
-SDL_Renderer* renderer = NULL;
 
 int last_frame_time = 0;
 
-struct player {
-	float x;
-	float y;
-	float width;
-	float height;
-	float velocityX;
-	float velocityY;
-	//last-key variable for when a and d are pressed consecutively
-	char lastKey;
-	//These below keys are only for player
-	bool aKeyPressed;
-	bool dKeyPressed;
-	bool wKeyPressed;
-	//Attack box
-	float attackBoxPositionX;
-	float attackBoxPositionY;
-	float attackBoxWidth;
-	float attackBoxHeight;
-	//isAttacking Condition
-	bool isAttacking;
+void timer(int);
+
+struct Player {
+    float x;
+    float y;
+    float width;
+    float height;
+    float velocityX;
+    float velocityY;
+    char lastKey;
+    bool aKeyPressed;
+    bool dKeyPressed;
+    bool wKeyPressed;
+    float attackBoxPositionX;
+    float attackBoxPositionY;
+    float attackBoxWidth;
+    float attackBoxHeight;
+    bool isAttacking;
 } player;
 
-struct enemy {
-	float x;
-	float y;
-	float width;
-	float height;
-	float velocityX;
-	float velocityY;
-	//last-key variable for when left and right are pressed consecutively
-	char lastKey;
-	//These below keys are only for enemy
-	bool leftKeyPressed;
-	bool rightKeyPressed;
-	bool upKeyPressed;
+struct Enemy {
+    float x;
+    float y;
+    float width;
+    float height;
+    float velocityX;
+    float velocityY;
+    char lastKey;
+    bool leftKeyPressed;
+    bool rightKeyPressed;
+    bool upKeyPressed;
 } enemy;
 
-int initialize_window() {
-	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-		fprintf(stderr, "Error initializing SDL \n");
-		return FALSE;
-	}
-
-	//Creating SDL Window
-	window = SDL_CreateWindow("Simar Window",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,WINDOW_WIDTH,WINDOW_HEIGHT,0);
-	if (!window) {
-		fprintf(stderr, "Error creating SDL window\n");
-		return FALSE;
-	}
-
-	//Creating renderer
-	renderer = SDL_CreateRenderer(window,-1,0);
-	if (!renderer) {
-		fprintf(stderr, "Error creating SDL renderer\n");
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
 void setup() {
-	//Player Initial Position Setup
-	player.x = 0;
-	player.y = 0;
-	player.width = 50;
-	player.height = 150;
-	player.velocityY = 400;
-	player.velocityX = 0;
-	player.aKeyPressed = false;
-	player.dKeyPressed = false;
-	player.wKeyPressed = false;
-	player.attackBoxHeight = 50;
-	player.attackBoxWidth = 100;
-	player.attackBoxPositionX = player.x;
-	player.attackBoxPositionY = player.y;
-	player.isAttacking = false;
+    player.x = 0;
+    player.y = 0;
+    player.width = 50;
+    player.height = 150;
+    player.velocityY = 400;
+    player.velocityX = 0;
+    player.aKeyPressed = false;
+    player.dKeyPressed = false;
+    player.wKeyPressed = false;
+    player.attackBoxHeight = 50;
+    player.attackBoxWidth = 100;
+    player.attackBoxPositionX = player.x;
+    player.attackBoxPositionY = player.y;
+    player.isAttacking = false;
 
-	//Enemy Initial Position Setup
-	enemy.x = 400;
-	enemy.y = 100;
-	enemy.width = 50;
-	enemy.height = 150;
-	enemy.velocityX = 0;
-	enemy.velocityY = 0;
+    enemy.x = 400;
+    enemy.y = 0;
+    enemy.width = 50;
+    enemy.height = 150;
+    enemy.velocityX = 0;
+    enemy.velocityY = 400;
+    enemy.leftKeyPressed = false;
+    enemy.rightKeyPressed = false;
 }
+
+void process_input(unsigned char key, int, int) {
+    switch (key) {
+    case 'd':
+        player.dKeyPressed = true;
+        player.lastKey = 'd';
+        break;
+    case 'a':
+        player.aKeyPressed = true;
+        player.lastKey = 'a';
+        break;
+    case 'w':
+        player.wKeyPressed = true;
+        player.lastKey = 'w';
+        player.velocityY = -2000;
+        break;
+    case ' ':
+        //printf("spacebar pressed\n");
+        player.isAttacking = true;
+        break;
+    }
+}
+
+void special(int key, int, int) {
+    switch (key) {
+    case GLUT_KEY_LEFT: // Left arrow key
+        enemy.leftKeyPressed = true;
+        enemy.lastKey = 'l';
+        break;
+    case GLUT_KEY_RIGHT: // Right arrow key
+        enemy.rightKeyPressed = true;
+        enemy.lastKey = 'r';
+        break;
+    case GLUT_KEY_UP: // Up arrow key
+        enemy.upKeyPressed = true;
+        enemy.lastKey = 'u';
+        enemy.velocityY -= 2000;
+        break;
+    }
+}
+
 
 void playerAttack() {
-	//Keep on resetting playerAttack to false
-	player.isAttacking = false;
+    player.isAttacking = false;
 }
 
-void process_input() {
-	SDL_Event e;
-	SDL_PollEvent(&e);
-	
-	switch (e.type) {
-	case SDL_QUIT:
-		game_is_running = FALSE;
-		break;
-	case SDL_KEYDOWN:
-		if (e.key.keysym.sym == SDLK_ESCAPE) {
-			game_is_running = FALSE;
-			break;
-		}
-		else if (e.key.keysym.sym == SDLK_d) {
-			//player.velocityX = 200;
-			player.dKeyPressed = true;
-			player.lastKey = 'd';
-			break;
-		}
-		else if (e.key.keysym.sym == SDLK_a) {
-			//player.velocityX = -200;
-			player.aKeyPressed = true;
-			player.lastKey = 'a';
-			break;
-		}
-		else if (e.key.keysym.sym == SDLK_w) {
-			//player.velocityX = -200;
-			player.wKeyPressed = true;
-			player.lastKey = 'w';
-			player.velocityY = -2000;
-			break;
-		}
-		else if(e.key.keysym.sym == SDLK_LEFT){
-			enemy.leftKeyPressed = true;
-			enemy.lastKey = 'l';
-			break;
-		}
-		else if (e.key.keysym.sym == SDLK_RIGHT) {
-			enemy.rightKeyPressed = true;
-			enemy.lastKey = 'r';
-			break;
-		}
-		else if (e.key.keysym.sym == SDLK_UP) {
-			enemy.upKeyPressed = true;
-			enemy.lastKey = 'u';
-			enemy.velocityY = -2000;
-			break;
-		}
-		else if (e.key.keysym.sym == SDLK_SPACE) {
-			//SDL_Log("Spacebar pressed\n");
-			player.isAttacking = true;
-			break;
-		}
-	case SDL_KEYUP:
-		if (e.key.keysym.sym == SDLK_d) {
-			//player.velocityX = 0;
-			player.dKeyPressed = false;
-			break;
-		}
-		else if (e.key.keysym.sym == SDLK_a) {
-			//player.velocityX = 0;
-			player.aKeyPressed = false;
-			break;
-		}
-		else if (e.key.keysym.sym == SDLK_w) {
-			//player.velocityX = -200;
-			player.wKeyPressed = false;
-			break;
-		}
-		else if (e.key.keysym.sym == SDLK_LEFT) {
-			enemy.leftKeyPressed = false;
-			break;
-		}
-		else if (e.key.keysym.sym == SDLK_RIGHT) {
-			enemy.rightKeyPressed = false;
-			break;
-		}
-		else if (e.key.keysym.sym == SDLK_UP) {
-			enemy.upKeyPressed = false;
-			break;
-		}
-	}
-	
-}
-
-/*
 void update() {
-	//waste some time or sleep until we reach target frame
-	//while (!SDL_TICKS_PASSED(SDL_GetTicks(), last_frame_time + FRAME_TARGET_TIME));//execution locked for some time
+    int time_now = glutGet(GLUT_ELAPSED_TIME);
+    float delta_time = (time_now - last_frame_time) / 1000.0f;
+    last_frame_time = time_now;
 
-	//Instead of while loop burning out CPU resources, we use SDL_Delay
-	int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - last_frame_time);
-	if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME) {
-		SDL_Delay(time_to_wait);
-	}
+    player.x += player.velocityX * delta_time;
+    player.attackBoxPositionX = player.x;
 
-	//delta time factor - factor to be used to update all my objects smoothly
-	float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0f;
+    player.y += player.velocityY * delta_time;
+    player.attackBoxPositionY = player.y;
+    if (player.y + player.height + player.velocityY * delta_time >= WINDOW_HEIGHT) {
+        player.velocityY = 0;
+    }
+    else {
+        player.velocityY += GRAVITY;
+    }
 
-	//logic to keep a fixed timestamp/frame-rate
-	last_frame_time = SDL_GetTicks();//SDL_GetTicks() returns the time passed since SDL_Init
+    player.velocityX = 0;
+    if (player.aKeyPressed == true) {
+        player.velocityX = -400;
+    }
+    else if (player.dKeyPressed == true) {
+        player.velocityX = 400;
+    }
 
-	player.x += 70*delta_time;
-	player.y += 70*delta_time;
+    playerAttack();
 
-	enemy.x += 70 * delta_time;
-	enemy.y += 70 * delta_time;
-}
-*/
-//Segragating PlayerUpdate and EnemyUpdate Functions
-void playerUpdate() {
-	//Instead of while loop burning out CPU resources, we use SDL_Delay
-	int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - last_frame_time);
-	if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME) {
-		SDL_Delay(time_to_wait);
-	}
+    //Enemy Logic
+    enemy.x += enemy.velocityX * delta_time;
+    enemy.y += enemy.velocityY * delta_time;
+    if (enemy.y + enemy.height + enemy.velocityY * delta_time >= WINDOW_HEIGHT) {
+        enemy.velocityY = 0;
+    }
+    else {
+        enemy.velocityY += GRAVITY;
+    }
 
-	//delta time factor - factor to be used to update all my objects smoothly
-	float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0f;
-
-	//logic to keep a fixed timestamp/frame-rate
-	last_frame_time = SDL_GetTicks();//SDL_GetTicks() returns the time passed since SDL_Init
-	
-	//Player moving along X axis on D KEYDOWN
-	player.x += player.velocityX*delta_time;
-	//Updating attack box position X
-	player.attackBoxPositionX = player.x;
-
-	//Player stop at ground gravity logic
-	player.y += player.velocityY*delta_time;
-	player.attackBoxPositionY = player.y;
-	if (player.y + player.height + player.velocityY*delta_time >= WINDOW_HEIGHT) {
-		player.velocityY = 0;
-	}
-	else {
-		player.velocityY += GRAVITY;
-	}
-
-	//Migrated A-KEY and D-KEY pressed logic from switch statement to here for smoother player movement
-	player.velocityX = 0;
-	if (player.aKeyPressed == true) {
-		player.velocityX = -400;
-	}
-	else if (player.dKeyPressed == true) {
-		player.velocityX = 400;
-	}
-
-	//Player Attack (Collision Detection with Enemy)
-	bool xCollisionCondition = player.attackBoxPositionX + player.attackBoxWidth >= enemy.x && player.attackBoxPositionX <= enemy.x + enemy.width;
-	bool yCollisionCondition = player.attackBoxPositionY + player.attackBoxHeight >= enemy.y && player.attackBoxPositionY <= enemy.y + enemy.height;
-	if (xCollisionCondition && yCollisionCondition && player.isAttacking==true) {
-		SDL_Log("Player attacked enemy!! \n");
-	}
-}
-
-void enemyUpdate() {
-	//Instead of while loop burning out CPU resources, we use SDL_Delay
-	int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - last_frame_time);
-	if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME) {
-		SDL_Delay(time_to_wait);
-	}
-
-	//delta time factor - factor to be used to update all my objects smoothly
-	float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0f;
-
-	//logic to keep a fixed timestamp/frame-rate
-	last_frame_time = SDL_GetTicks();//SDL_GetTicks() returns the time passed since SDL_Init
-
-	//enemy movement logic
-	enemy.x += enemy.velocityX * delta_time;
-	//Enemy stop at ground gravity logic
-	enemy.y += enemy.velocityY * delta_time;
-	if (enemy.y + enemy.height + enemy.velocityY * delta_time >= WINDOW_HEIGHT) {
-		enemy.velocityY = 0;
-	}
-	else {
-		enemy.velocityY += GRAVITY;
-	}
-
-	//Migrated A-KEY and D-KEY pressed logic from switch statement to here for smoother player movement
-	enemy.velocityX = 0;
-	if (enemy.leftKeyPressed == true) {
-		enemy.velocityX = -400;
-	}
-	else if (enemy.rightKeyPressed == true) {
-		enemy.velocityX = 400;
-	}
+    enemy.velocityX = 0;
+    if (enemy.leftKeyPressed == true) {
+        enemy.velocityX = -400;
+    }
+    else if (enemy.rightKeyPressed == true) {
+        enemy.velocityX = 400;
+    }
 }
 
 void render() {
-	//Setting the background color for buffer
-	SDL_SetRenderDrawColor(renderer,0,0,0,255);
-	SDL_RenderClear(renderer);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glColor3f(1.0f, 0.0f, 0.0f);
+    glBegin(GL_QUADS);
+    glVertex2f(player.x, WINDOW_HEIGHT - player.y);
+    glVertex2f(player.x + player.width, WINDOW_HEIGHT - player.y);
+    glVertex2f(player.x + player.width, WINDOW_HEIGHT - player.y - player.height);
+    glVertex2f(player.x, WINDOW_HEIGHT - player.y - player.height);
+    glEnd();
 
-	//HERE BELOW IS THE PART WHERE WE CAN START DRAWING OUR GAME OBJECTS
-	//Draw a rectangle
-	SDL_Rect player_rect = {(int)player.x,(int)player.y,(int)player.width,(int)player.height};
-	//Before rendering the color, set the rendercolor so that it does not render as black again because we allocated background earlier black
-	SDL_SetRenderDrawColor(renderer,255,0,0,0);
-	//Render the rectangle
-	SDL_RenderFillRect(renderer, &player_rect);
+    glColor3f(0.0f, 0.0f, 1.0f);
+    glBegin(GL_QUADS);
+    glVertex2f(enemy.x, WINDOW_HEIGHT - enemy.y);
+    glVertex2f(enemy.x + enemy.width, WINDOW_HEIGHT - enemy.y);
+    glVertex2f(enemy.x + enemy.width, WINDOW_HEIGHT - enemy.y - enemy.height);
+    glVertex2f(enemy.x, WINDOW_HEIGHT - enemy.y - enemy.height);
+    glEnd();
 
-	//Draw enemy rectangle
-	SDL_Rect enemy_rect = { (int)enemy.x,(int)enemy.y,(int)enemy.width,(int)enemy.height };
-	//Assigning color to enemy
-	SDL_SetRenderDrawColor(renderer, 0, 0, 255, 0);
+    //if (player.isAttacking == true) {
+    glColor3f(0.0f, 1.0f, 0.0f);
+    glBegin(GL_QUADS);
+    glVertex2f(player.x, WINDOW_HEIGHT - player.y);
+    glVertex2f(player.x + player.attackBoxWidth, WINDOW_HEIGHT - player.y);
+    glVertex2f(player.x + player.attackBoxWidth, WINDOW_HEIGHT - player.y - player.attackBoxHeight);
+    glVertex2f(player.x, WINDOW_HEIGHT - player.y - player.attackBoxHeight);
+    glEnd();
+    //}
 
-	//Render the rectangle
-	SDL_RenderFillRect(renderer, &enemy_rect);
-
-	//Render the rectangle only when player is attacking
-	if (player.isAttacking == true) {
-		//Assigning color to attack box
-		SDL_SetRenderDrawColor(renderer, 0, 255, 0, 0);
-		//Render the attack box for player
-		SDL_Rect attackBoxPlayer = { (int)player.x,(int)player.y,(int)player.attackBoxWidth,(int)player.attackBoxHeight };
-		SDL_RenderFillRect(renderer, &attackBoxPlayer);
-	}
-
-	SDL_RenderPresent(renderer);//Swapping out the front buffer with back buffer
+    glutSwapBuffers();
 }
 
-void destroy_window() {
-	SDL_DestroyRenderer(renderer);
-	SDL_DestroyWindow(window);
-	SDL_Quit();
+void keyboard(unsigned char key, int, int) {
+    switch (key) {
+    case 'd':
+    case 'a':
+    case 'w':
+    case ' ':
+        // Process input
+        process_input(key,0,0);
+        break;
+    case 27: // Escape key
+        exit(0);
+    }
 }
 
-int main(int argc,char* argv[]) {
-	game_is_running = initialize_window();
+void init() {
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT);
+}
 
-	setup();
+void process_release(unsigned char key, int, int) {
+    switch (key) {
+    case 'd':
+        player.dKeyPressed = false;
+        break;
+    case 'a':
+        player.aKeyPressed = false;
+        break;
+    case 'w':
+        player.wKeyPressed = false;
+        break;
+    }
+}
 
-	while (game_is_running) {
-		process_input();
-		playerUpdate();
-		playerAttack();
-		enemyUpdate();
-		render();
-	}
+void process_special_release(int key, int, int) {
+    switch (key) {
+    case GLUT_KEY_LEFT:
+        enemy.leftKeyPressed = false;
+        break;
+    case GLUT_KEY_RIGHT:
+        enemy.rightKeyPressed = false;
+        break;
+    case GLUT_KEY_UP:
+        enemy.upKeyPressed = false;
+        break;
+    }
+}
 
-	destroy_window();
+void timer(int) {
+    update();
+    glutPostRedisplay();
+    glutTimerFunc(1000 / 120, timer, 0); // 120 frames per second
+}
 
-	return 0;
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+    glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+    glutCreateWindow("SDL to GLUT Conversion");
+
+    init();
+    setup();
+
+    glutDisplayFunc(render);
+    //process_input (KEYDOWN)
+    glutKeyboardFunc(keyboard);
+    //Arrow keys come in special
+    glutSpecialFunc(special); // Register special key function
+    //KEYUP
+    glutKeyboardUpFunc(process_release);
+    //KEYUP for special keys
+    glutSpecialUpFunc(process_special_release);
+    //Game-Loop
+    glutTimerFunc(0, timer, 0);
+
+    glutMainLoop();
+
+    return 0;
 }

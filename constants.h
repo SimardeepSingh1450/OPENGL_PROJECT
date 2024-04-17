@@ -11,3 +11,5 @@
 #define FRAME_TARGET_TIME (1000/FPS)
 
 #define GRAVITY 100
+
+#define M_PI 3.14
