@@ -182,7 +182,7 @@ void update() {
     bool yCollisionCondition = player.attackBoxPositionY + player.attackBoxHeight >= enemy.y && player.attackBoxPositionY <= (enemy.y + enemy.height);
     if (xCollisionCondition && yCollisionCondition && player.isAttacking == true) {
         //Reduce enemy health width
-        enemy.healthBarWidth -= enemy.healthBarWidth * 0.10;
+        enemy.healthBarWidth -= (float)(enemy.healthBarWidth * 0.10);
         //printf("Player attacked enemy!! \n");
 
         //printf("Enemy Health: %f \n",enemy.healthBarWidth);
@@ -212,10 +212,10 @@ void update() {
 
     //Enemy-Attack Collision Detection
     bool xCollisionCondition2 = (enemy.x - 50) >= player.x && (enemy.x-50) <= player.x + player.width;
-    bool yCollisionCondition2 = enemy.y+50 >= player.y;
+    bool yCollisionCondition2 = enemy.y+50 <= (player.y+player.height) && (enemy.attackBoxPositionY) <= (player.y + player.height);
     if (xCollisionCondition2 && yCollisionCondition2 && enemy.isAttacking == true) {
         //Reduce player health width
-        player.healthBarWidth -= player.healthBarWidth * 0.10;
+        player.healthBarWidth -= (float)(player.healthBarWidth * 0.10);
         //printf("Enemy attacked Player!! \n");
 
         if (player.healthBarWidth <= 0.03) {
