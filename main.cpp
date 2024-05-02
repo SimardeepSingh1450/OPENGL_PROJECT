@@ -34,6 +34,7 @@ void loadBackgroundTexture() {
 
 // Load sprite texture
 GLuint spriteTextureID;
+GLuint enemySpriteTextureID;
 void loadSpriteTexture() {
     int width, height, channels;
     unsigned char* image = stbi_load("./assets/test.png", &width, &height, &channels, STBI_rgb_alpha); // Use STBI_rgb_alpha for PNG images with alpha channel
@@ -49,6 +50,26 @@ void loadSpriteTexture() {
     glBindTexture(GL_TEXTURE_2D, spriteTextureID);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image); // Use GL_RGBA for PNG images with alpha channel
     stbi_image_free(image);
+
+    // Set texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    //Enemy Sprite Load Logic
+    int width2, height2, channels2;
+    unsigned char* image2 = stbi_load("./assets/test2.png", &width2, &height2, &channels2, STBI_rgb_alpha); // Use STBI_rgb_alpha for PNG images with alpha channel
+
+    if (image2 == nullptr) {
+        printf("Failed to load sprite image.\n");
+        // Print more details about the error if available
+        printf("Error: %s\n", stbi_failure_reason());
+        exit(1);
+    }
+
+    glGenTextures(1, &enemySpriteTextureID);
+    glBindTexture(GL_TEXTURE_2D, enemySpriteTextureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width2, height2, 0, GL_RGBA, GL_UNSIGNED_BYTE, image2); // Use GL_RGBA for PNG images with alpha channel
+    stbi_image_free(image2);
 
     // Set texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -191,6 +212,30 @@ void renderSprite() {
 
     glTexCoord2f(0.0f, textureHeight);
     glVertex2f(player.x, WINDOW_HEIGHT - (player.y + player.height));
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+
+    //Render Enemy Sprite
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, enemySpriteTextureID);
+
+    // Calculate texture coordinates
+    float textureWidth2 = 1.0f;
+    float textureHeight2 = 1.0f;
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); //Texture top-left cooridnate
+    glVertex2f(enemy.x, WINDOW_HEIGHT - enemy.y);
+
+    glTexCoord2f(textureWidth2, 0.0f); //Texture top-right cooridnate
+    glVertex2f(enemy.x + enemy.width + 150, WINDOW_HEIGHT - enemy.y);
+
+    glTexCoord2f(textureWidth2, textureHeight2);
+    glVertex2f(enemy.x + enemy.width + 150, WINDOW_HEIGHT - (enemy.y + enemy.height));
+
+    glTexCoord2f(0.0f, textureHeight2);
+    glVertex2f(enemy.x, WINDOW_HEIGHT - (enemy.y + enemy.height));
     glEnd();
 
     glDisable(GL_TEXTURE_2D);
@@ -384,7 +429,7 @@ void render() {
     // Reset color to white before rendering other objects
     glColor3f(1.0f, 1.0f, 1.0f);
 
-    //render player sprite
+    //render player sprite and enemy sprite
     renderSprite();
 }
 
