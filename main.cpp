@@ -303,7 +303,7 @@ void update() {
 
     player.y += player.velocityY * delta_time;
     player.attackBoxPositionY = player.y;
-    if (player.y + player.height + player.velocityY * delta_time >= WINDOW_HEIGHT) {
+    if (player.y + player.height + player.velocityY * delta_time >= WINDOW_HEIGHT - 95) {
         player.velocityY = 0;
     }
     else {
@@ -336,7 +336,7 @@ void update() {
     //Enemy Logic
     enemy.x += enemy.velocityX * delta_time;
     enemy.y += enemy.velocityY * delta_time;
-    if (enemy.y + enemy.height + enemy.velocityY * delta_time >= WINDOW_HEIGHT) {
+    if (enemy.y + enemy.height + enemy.velocityY * delta_time >= WINDOW_HEIGHT - 95) {
         enemy.velocityY = 0;
     }
     else {
