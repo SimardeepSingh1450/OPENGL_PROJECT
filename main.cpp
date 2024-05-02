@@ -1,4 +1,4 @@
-#include <GL/glut.h>
+#include <GLFW/glfw3.h>
 #include <stdio.h>
 #include "constants.h"
 
@@ -7,8 +7,7 @@
 #include "stb_image.h"
 
 int last_frame_time = 0;
-
-void timer(int);
+GLFWwindow* window;
 
 // Function to load the background image
 GLuint backgroundTextureID;
@@ -77,6 +76,7 @@ struct Player {
     //Health Bar
     float healthBarWidth;
     float healthBarHeight;
+    float lastAttackTime;
 } player;
 
 struct Enemy {
@@ -100,6 +100,7 @@ struct Enemy {
     //Health Bar
     float healthBarWidth;
     float healthBarHeight;
+    float lastAttackTime;
 } enemy;
 
 void setup() {
@@ -120,6 +121,7 @@ void setup() {
     player.attackTimerRunning = false;//attack timer for toggle
     player.healthBarHeight = 50;
     player.healthBarWidth = 500;
+    player.lastAttackTime = 0.0;
 
     enemy.x = 400;
     enemy.y = 0;
@@ -137,6 +139,7 @@ void setup() {
     enemy.attackTimerRunning = false;//attack timer for toggle
     enemy.healthBarHeight = 50;
     enemy.healthBarWidth = 500;
+    enemy.lastAttackTime = 0.0;
 
     //Setting up background image texture
     // Load background texture
@@ -193,71 +196,60 @@ void renderSprite() {
     glDisable(GL_TEXTURE_2D);
 }
 
-// Function to toggle the isAttacking variable
-void PlayertoggleIsAttacking(int value) {
-    player.isAttacking = !player.isAttacking;
-    player.attackTimerRunning = false; // Reset the timer flag
-}
-
-void EnemytoggleIsAttacking(int value) {
-    enemy.isAttacking = !enemy.isAttacking;
-    enemy.attackTimerRunning = false; // Reset the timer flag
-}
-
-void process_input(unsigned char key, int, int) {
+void process_input(int key, int, int) {
     switch (key) {
-    case 'd':
+    case GLFW_KEY_D:
         player.dKeyPressed = true;
         player.lastKey = 'd';
         break;
-    case 'a':
+    case GLFW_KEY_A:
         player.aKeyPressed = true;
         player.lastKey = 'a';
         break;
-    case 'w':
+    case GLFW_KEY_W:
         player.wKeyPressed = true;
         player.lastKey = 'w';
         player.velocityY = -2000;
         break;
-    case ' ':
+    case GLFW_KEY_SPACE:
         //printf("spacebar pressed\n");
-        player.isAttacking = true;
-        if (!player.attackTimerRunning) {
-            glutTimerFunc(100, PlayertoggleIsAttacking, 0); // Call toggleIsAttacking after 100 milliseconds
-            player.attackTimerRunning = true; // Set the timer flag
+        if (glfwGetTime() - player.lastAttackTime >= 0.1) { // Check if enough time has passed since the last attack
+            player.isAttacking = true;
+            player.lastAttackTime = glfwGetTime(); // Update the last attack time
         }
-        //player.isAttacking = true;
+        break;
+    case GLFW_KEY_ESCAPE:
+        exit(0);
         break;
     }
 }
 
 void special(int key, int, int) {
     switch (key) {
-    case GLUT_KEY_LEFT: // Left arrow key
+    case GLFW_KEY_LEFT: // Left arrow key
         enemy.leftKeyPressed = true;
         enemy.lastKey = 'l';
         break;
-    case GLUT_KEY_RIGHT: // Right arrow key
+    case GLFW_KEY_RIGHT: // Right arrow key
         enemy.rightKeyPressed = true;
         enemy.lastKey = 'r';
         break;
-    case GLUT_KEY_UP: // Up arrow key
+    case GLFW_KEY_UP: // Up arrow key
         enemy.upKeyPressed = true;
         enemy.lastKey = 'u';
         enemy.velocityY -= 2000;
         break;
-    case GLUT_KEY_DOWN: // down arrow key
-        enemy.isAttacking = true;
-        if (!enemy.attackTimerRunning) {
-            glutTimerFunc(100, EnemytoggleIsAttacking, 0); // Call toggleIsAttacking after 100 milliseconds
-            enemy.attackTimerRunning = true; // Set the timer flag
+    case GLFW_KEY_DOWN: // down arrow key
+        if (glfwGetTime() - enemy.lastAttackTime >= 0.1) { // Check if enough time has passed since the last attack
+            enemy.isAttacking = true;
+            enemy.lastAttackTime = glfwGetTime(); // Update the last attack time
         }
         break;
     }
 }
 
 void update() {
-    int time_now = glutGet(GLUT_ELAPSED_TIME);
+    int time_now = glfwGetTime() * 1000; // in milliseconds
     float delta_time = (time_now - last_frame_time) / 1000.0f;
     last_frame_time = time_now;
 
@@ -287,7 +279,7 @@ void update() {
     if (xCollisionCondition && yCollisionCondition && player.isAttacking == true) {
         //Reduce enemy health width
         enemy.healthBarWidth -= (float)(enemy.healthBarWidth * 0.10);
-        //printf("Player attacked enemy!! \n");
+        printf("Player attacked enemy!! \n");
 
         //printf("Enemy Health: %f \n",enemy.healthBarWidth);
         if (enemy.healthBarWidth <= 0.03) {
@@ -315,22 +307,21 @@ void update() {
     }
 
     //Enemy-Attack Collision Detection
-    bool xCollisionCondition2 = (enemy.x - 50) >= player.x && (enemy.x-50) <= player.x + player.width;
-    bool yCollisionCondition2 = enemy.y+50 <= (player.y+player.height) && (enemy.attackBoxPositionY) <= (player.y + player.height);
+    bool xCollisionCondition2 = (enemy.x - 50) >= player.x && (enemy.x - 50) <= player.x + player.width;
+    bool yCollisionCondition2 = enemy.y + enemy.height >= player.y && player.y + player.height >= enemy.y;
     if (xCollisionCondition2 && yCollisionCondition2 && enemy.isAttacking == true) {
         //Reduce player health width
         player.healthBarWidth -= (float)(player.healthBarWidth * 0.10);
-        //printf("Enemy attacked Player!! \n");
+        printf("Enemy attacked Player!! \n");
 
         if (player.healthBarWidth <= 0.03) {
             printf("Enemy Won!!\n");
-            exit(0);
+            //exit(0);
         }
     }
 }
 
 void render() {
-    glClear(GL_COLOR_BUFFER_BIT);
     //Rendering the background image
     renderBackground();
 
@@ -367,7 +358,7 @@ void render() {
         glVertex2f(enemy.x - 50, WINDOW_HEIGHT - enemy.y);
         glVertex2f(enemy.x - 50 + enemy.attackBoxWidth, WINDOW_HEIGHT - enemy.y);
         glVertex2f(enemy.x - 50 + enemy.attackBoxWidth, WINDOW_HEIGHT - enemy.y - enemy.attackBoxHeight);
-        glVertex2f(enemy.x - 50 , WINDOW_HEIGHT - enemy.y - enemy.attackBoxHeight);
+        glVertex2f(enemy.x - 50, WINDOW_HEIGHT - enemy.y - enemy.attackBoxHeight);
         glEnd();
     }
 
@@ -375,38 +366,38 @@ void render() {
     //Player Health Bar
     glColor3f(1.0f, 1.0f, 0.0f);
     glBegin(GL_QUADS);
-    glVertex2f(5,WINDOW_HEIGHT - 5);//top left vertex
+    glVertex2f(5, WINDOW_HEIGHT - 5);//top left vertex
     glVertex2f(5 + player.healthBarWidth, WINDOW_HEIGHT - 5);
     glVertex2f(5 + player.healthBarWidth, WINDOW_HEIGHT - 5 - player.healthBarHeight);
-    glVertex2f(5,WINDOW_HEIGHT - 5 - player.healthBarHeight);
+    glVertex2f(5, WINDOW_HEIGHT - 5 - player.healthBarHeight);
     glEnd();
 
     //Enemy Health Bar
     glColor3f(1.0f, 1.0f, 0.0f);
     glBegin(GL_QUADS);
-    glVertex2f(WINDOW_WIDTH - 5 , WINDOW_HEIGHT - 5);//top left vertex
+    glVertex2f(WINDOW_WIDTH - 5, WINDOW_HEIGHT - 5);//top left vertex
     glVertex2f(WINDOW_WIDTH - 5 - enemy.healthBarWidth, WINDOW_HEIGHT - 5);
     glVertex2f(WINDOW_WIDTH - 5 - enemy.healthBarWidth, WINDOW_HEIGHT - 5 - enemy.healthBarHeight);
     glVertex2f(WINDOW_WIDTH - 5, WINDOW_HEIGHT - 5 - enemy.healthBarHeight);
     glEnd();
 
+    // Reset color to white before rendering other objects
+    glColor3f(1.0f, 1.0f, 1.0f);
+
     //render player sprite
     renderSprite();
-
-    glutSwapBuffers();
 }
 
-void keyboard(unsigned char key, int, int) {
+void keyboard(int key, int, int) {
     switch (key) {
-    case 'd':
-    case 'a':
-    case 'w':
-    case ' ':
+    case GLFW_KEY_D:
+    case GLFW_KEY_A:
+    case GLFW_KEY_W:
+    case GLFW_KEY_SPACE:
+    case GLFW_KEY_ESCAPE:
         // Process input
-        process_input(key,0,0);
+        process_input(key, 0, 0);
         break;
-    case 27: // Escape key
-        exit(0);
     }
 }
 
@@ -414,65 +405,131 @@ void init() {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluOrtho2D(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT);
+    glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1, 1); // Specify the orthographic projection
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 }
 
-void process_release(unsigned char key, int, int) {
+void process_release(int key, int, int) {
     switch (key) {
-    case 'd':
+    case GLFW_KEY_D:
         player.dKeyPressed = false;
         break;
-    case 'a':
+    case GLFW_KEY_A:
         player.aKeyPressed = false;
         break;
-    case 'w':
+    case GLFW_KEY_W:
         player.wKeyPressed = false;
+        break;
+    case GLFW_KEY_SPACE:
+        player.isAttacking = false;
         break;
     }
 }
 
 void process_special_release(int key, int, int) {
     switch (key) {
-    case GLUT_KEY_LEFT:
+    case GLFW_KEY_LEFT:
         enemy.leftKeyPressed = false;
         break;
-    case GLUT_KEY_RIGHT:
+    case GLFW_KEY_RIGHT:
         enemy.rightKeyPressed = false;
         break;
-    case GLUT_KEY_UP:
+    case GLFW_KEY_UP:
         enemy.upKeyPressed = false;
+        break;
+    case GLFW_KEY_DOWN:
+        enemy.isAttacking = false;
         break;
     }
 }
 
-void timer(int) {
-    update();
-    glutPostRedisplay();
-    glutTimerFunc(1000 / 120, timer, 0); // 120 frames per second
+void special_release(int key, int, int) {
+    switch (key) {
+    case GLFW_KEY_LEFT:
+    case GLFW_KEY_RIGHT:
+    case GLFW_KEY_UP:
+    case GLFW_KEY_DOWN:
+        process_special_release(key, 0, 0);
+        break;
+    }
 }
 
-int main(int argc, char** argv) {
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_ALPHA);
-    glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
-    glutCreateWindow("2D FIGHTING GAME");
+void timer() {
+    static double lastTime = glfwGetTime();
+    double currentTime = glfwGetTime();
+    double deltaTime = currentTime - lastTime;
+
+    update();
+
+    lastTime = currentTime;
+}
+
+void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS) {
+        process_input(key, 0, 0);
+    }
+    else if (action == GLFW_RELEASE) {
+        process_release(key, 0, 0);
+    }
+
+    // Process special keys
+    switch (key) {
+    case GLFW_KEY_LEFT:
+    case GLFW_KEY_RIGHT:
+    case GLFW_KEY_UP:
+    case GLFW_KEY_DOWN:
+        if (action == GLFW_PRESS) {
+            special(key, 0, 0);
+        }
+        else if (action == GLFW_RELEASE) {
+            special_release(key, 0, 0);
+        }
+        break;
+    }
+}
+
+// Callback function to handle window resizing
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+    // Adjust the viewport when the window is resized
+    glViewport(0, 0, width, height);
+}
+
+int main() {
+    if (!glfwInit()) {
+        return -1;
+    }
+
+    window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "2D FIGHTING GAME", NULL, NULL);
+    if (!window) {
+        glfwTerminate();
+        return -1;
+    }
+
+    // Set the framebuffer size callback to handle window resizing
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
 
     init();
     setup();
 
-    glutDisplayFunc(render);
-    //process_input (KEYDOWN)
-    glutKeyboardFunc(keyboard);
-    //Arrow keys come in special
-    glutSpecialFunc(special); // Register special key function
-    //KEYUP
-    glutKeyboardUpFunc(process_release);
-    //KEYUP for special keys
-    glutSpecialUpFunc(process_special_release);
-    //Game-Loop
-    glutTimerFunc(0, timer, 0);
+    // Set keyboard callback functions
+    glfwSetKeyCallback(window, keyboard);
 
-    glutMainLoop();
+    // Game loop
+    while (!glfwWindowShouldClose(window)) {
+        glClear(GL_COLOR_BUFFER_BIT);
 
+        // Update and render
+        timer();
+        render();
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    glfwTerminate();
     return 0;
 }
