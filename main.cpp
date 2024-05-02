@@ -2,9 +2,36 @@
 #include <stdio.h>
 #include "constants.h"
 
+// STB_IMPORTING for images
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 int last_frame_time = 0;
 
 void timer(int);
+
+// Function to load the background image
+GLuint backgroundTextureID;
+void loadBackgroundTexture() {
+    int width, height, channels;
+    unsigned char* image = stbi_load("./assets/background.png", &width, &height, &channels, STBI_rgb_alpha);
+
+    if (image == nullptr) {
+        printf("Failed to load background image.\n");
+        // Print more details about the error if available
+        printf("Error: %s\n", stbi_failure_reason());
+        exit(1);
+    }
+
+    glGenTextures(1, &backgroundTextureID);
+    glBindTexture(GL_TEXTURE_2D, backgroundTextureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+    stbi_image_free(image);
+
+    // Set texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+}
 
 struct Player {
     float x;
@@ -87,6 +114,32 @@ void setup() {
     enemy.attackTimerRunning = false;//attack timer for toggle
     enemy.healthBarHeight = 50;
     enemy.healthBarWidth = 500;
+
+    //Setting up background image texture
+    // Load background texture
+    loadBackgroundTexture();
+}
+
+// Function to render a full-screen quad with the background image
+void renderBackground() {
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, backgroundTextureID);
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 1.0f); // Texture coordinate (bottom left)
+    glVertex2f(0, 0);
+
+    glTexCoord2f(1.0f, 1.0f); // Texture coordinate (bottom right)
+    glVertex2f(WINDOW_WIDTH, 0);
+
+    glTexCoord2f(1.0f, 0.0f); // Texture coordinate (top right)
+    glVertex2f(WINDOW_WIDTH, WINDOW_HEIGHT);
+
+    glTexCoord2f(0.0f, 0.0f); // Texture coordinate (top left)
+    glVertex2f(0, WINDOW_HEIGHT);
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
 }
 
 // Function to toggle the isAttacking variable
@@ -188,7 +241,7 @@ void update() {
         //printf("Enemy Health: %f \n",enemy.healthBarWidth);
         if (enemy.healthBarWidth <= 0.03) {
             printf("Player Won!!\n");
-            exit(0);
+            //exit(0);
         }
     }
 
@@ -227,6 +280,9 @@ void update() {
 
 void render() {
     glClear(GL_COLOR_BUFFER_BIT);
+    //Rendering the background image
+    renderBackground();
+
     glColor3f(1.0f, 0.0f, 0.0f);
     glBegin(GL_QUADS);
     glVertex2f(player.x, WINDOW_HEIGHT - player.y);
@@ -282,7 +338,6 @@ void render() {
     glVertex2f(WINDOW_WIDTH - 5 - enemy.healthBarWidth, WINDOW_HEIGHT - 5 - enemy.healthBarHeight);
     glVertex2f(WINDOW_WIDTH - 5, WINDOW_HEIGHT - 5 - enemy.healthBarHeight);
     glEnd();
-
 
     glutSwapBuffers();
 }
@@ -344,7 +399,7 @@ void timer(int) {
 
 int main(int argc, char** argv) {
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_ALPHA);
     glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
     glutCreateWindow("2D FIGHTING GAME");
 

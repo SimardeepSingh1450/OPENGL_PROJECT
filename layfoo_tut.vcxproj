@@ -141,6 +141,10 @@
   <ItemGroup>
     <ClInclude Include="constants.h" />
     <ClInclude Include="Sprite.h" />
+    <ClInclude Include="stb_image.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="assets\background.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
