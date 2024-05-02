@@ -33,6 +33,29 @@ void loadBackgroundTexture() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
+// Load sprite texture
+GLuint spriteTextureID;
+void loadSpriteTexture() {
+    int width, height, channels;
+    unsigned char* image = stbi_load("./assets/test.png", &width, &height, &channels, STBI_rgb_alpha); // Use STBI_rgb_alpha for PNG images with alpha channel
+
+    if (image == nullptr) {
+        printf("Failed to load sprite image.\n");
+        // Print more details about the error if available
+        printf("Error: %s\n", stbi_failure_reason());
+        exit(1);
+    }
+
+    glGenTextures(1, &spriteTextureID);
+    glBindTexture(GL_TEXTURE_2D, spriteTextureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image); // Use GL_RGBA for PNG images with alpha channel
+    stbi_image_free(image);
+
+    // Set texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+}
+
 struct Player {
     float x;
     float y;
@@ -118,6 +141,8 @@ void setup() {
     //Setting up background image texture
     // Load background texture
     loadBackgroundTexture();
+    //load sprite texture
+    loadSpriteTexture();
 }
 
 // Function to render a full-screen quad with the background image
@@ -137,6 +162,32 @@ void renderBackground() {
 
     glTexCoord2f(0.0f, 0.0f); // Texture coordinate (top left)
     glVertex2f(0, WINDOW_HEIGHT);
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+}
+
+// Function to render the sprite
+void renderSprite() {
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, spriteTextureID);
+
+    // Calculate texture coordinates
+    float textureWidth = 1.0f;
+    float textureHeight = 1.0f;
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); //Texture top-left cooridnate
+    glVertex2f(player.x, WINDOW_HEIGHT - player.y);
+
+    glTexCoord2f(textureWidth, 0.0f); //Texture top-right cooridnate
+    glVertex2f(player.x + player.width + 150, WINDOW_HEIGHT - player.y);
+
+    glTexCoord2f(textureWidth, textureHeight);
+    glVertex2f(player.x + player.width + 150, WINDOW_HEIGHT - (player.y + player.height));
+
+    glTexCoord2f(0.0f, textureHeight);
+    glVertex2f(player.x, WINDOW_HEIGHT - (player.y + player.height));
     glEnd();
 
     glDisable(GL_TEXTURE_2D);
@@ -338,6 +389,9 @@ void render() {
     glVertex2f(WINDOW_WIDTH - 5 - enemy.healthBarWidth, WINDOW_HEIGHT - 5 - enemy.healthBarHeight);
     glVertex2f(WINDOW_WIDTH - 5, WINDOW_HEIGHT - 5 - enemy.healthBarHeight);
     glEnd();
+
+    //render player sprite
+    renderSprite();
 
     glutSwapBuffers();
 }
