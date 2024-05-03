@@ -1,5 +1,8 @@
-#include <GLFW/glfw3.h>
 #include <stdio.h>
+
+#include <glad/gl.h>
+#include <GLFW/glfw3.h>
+
 #include "constants.h"
 
 // STB_IMPORTING for images
@@ -8,6 +11,7 @@
 
 int last_frame_time = 0;
 GLFWwindow* window;
+GLuint vertexShaderID;
 
 // Function to load the background image
 GLuint backgroundTextureID;
@@ -167,6 +171,9 @@ void setup() {
     loadBackgroundTexture();
     //load sprite texture
     loadSpriteTexture();
+
+    //Create Shaders
+    vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
 }
 
 // Function to render a full-screen quad with the background image
@@ -556,6 +563,12 @@ int main() {
 
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
+
+    if (!gladLoadGL(glfwGetProcAddress)){
+        printf("Failed to initialize GLAD\n");
+        glfwTerminate();
+        return -1;
+    }
 
     init();
     setup();
