@@ -3,8 +3,8 @@
 #define FALSE 0
 #define TRUE 1
 
-#define WINDOW_WIDTH 1024
-#define WINDOW_HEIGHT 576
+#define WINDOW_WIDTH 1366
+#define WINDOW_HEIGHT 768
 
 #define FPS 120
 //Time - 1000/30 = 33.333 millis

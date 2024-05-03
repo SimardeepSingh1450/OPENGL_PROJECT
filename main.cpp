@@ -43,9 +43,9 @@ void loadBackgroundTexture() {
         exit(1);
     }
 
-    glGenTextures(1, &backgroundTextureID);
+    glGenTextures(1, &glContext.textureID);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, backgroundTextureID);
+    glBindTexture(GL_TEXTURE_2D, glContext.textureID);
 
 
     // Set texture parameters
@@ -219,6 +219,12 @@ void shaderRender() {
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
 
+    // Texture Loading using stb_image
+    loadBackgroundTexture();
+
+    //to fix image color darkness
+    glEnable(GL_FRAMEBUFFER_SRGB);
+
     //Depth testing
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_GREATER);
@@ -269,9 +275,9 @@ void setup() {
     // ############################################# TEXTURE LOADING #######################################################
     //Setting up background image texture
     // Load background texture
-    loadBackgroundTexture();
+    //loadBackgroundTexture();
     //load sprite texture
-    loadSpriteTexture();
+    //loadSpriteTexture();
     //shader render
     shaderRender();
 
@@ -493,10 +499,10 @@ void update() {
 
 void render() {
     //Rendering the background image
-    renderBackground();
+    //renderBackground();
 
     //render player sprite and enemy sprite
-    renderSprite();
+    //renderSprite();
 
     /*
     glColor3f(1.0f, 0.0f, 0.0f);
