@@ -46,7 +46,7 @@ void loadBackgroundTexture() {
     glGenTextures(1, &backgroundTextureID);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, backgroundTextureID);
-   
+
 
     // Set texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -74,8 +74,8 @@ void loadSpriteTexture() {
         exit(1);
     }
 
-    glGenTextures(1, &glContext.textureID);
-    glBindTexture(GL_TEXTURE_2D, glContext.textureID);
+    glGenTextures(1, &spriteTextureID);
+    glBindTexture(GL_TEXTURE_2D, spriteTextureID);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image); // Use GL_RGBA for PNG images with alpha channel
     stbi_image_free(image);
 
@@ -154,6 +154,79 @@ struct Enemy {
     float lastAttackTime;
 } enemy;
 
+void shaderRender() {
+    // ############################################## SHADERS CODE STARTS HERE ##############################################
+    //Assigning transientStorage for shaders
+    transientStorage = make_bump_allocator(MB(1));
+
+    //Create Shaders
+    vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+    fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+
+    //Read the vertex shader and fragment shader from the .frag and .vert files
+    int fileSize = 0;
+    char* vertShader = read_file2("./quad.vert", &fileSize, &transientStorage);
+    char* fragmentShader = read_file2("./quad.frag", &fileSize, &transientStorage);
+    if (!vertShader || !fragmentShader) {
+        printf("Failed to load shaders \n");
+        exit(0);
+    }
+
+    //Now we can connect sources with shaderIDS
+    //In-built glShaderSource() function
+    glShaderSource(vertexShaderID, 1, &vertShader, 0);
+    glShaderSource(fragmentShaderID, 1, &fragmentShader, 0);
+
+    //Compile the shader code after linking the source with shaderIDS -> using inbuilt glCompileShader() function
+    glCompileShader(vertexShaderID);
+    glCompileShader(fragmentShaderID);
+
+    //Test wether vertex shaders compiled successfully
+    {
+        int success;
+        char shaderLog[2048] = {};
+        glGetShaderiv(vertexShaderID, GL_COMPILE_STATUS, &success);
+        if (!success) {
+            glGetShaderInfoLog(vertexShaderID, 2048, 0, shaderLog);
+            printf("Failed to compile vertex shaders : %s", shaderLog);
+        }
+    }
+
+    //Test wether fragment shaders compiled successfully
+    {
+        int success;
+        char shaderLog[2048] = {};
+        glGetShaderiv(fragmentShaderID, GL_COMPILE_STATUS, &success);
+        if (!success) {
+            glGetShaderInfoLog(fragmentShaderID, 2048, 0, shaderLog);
+            printf("Failed to compile fragment shaders : %s", shaderLog);
+        }
+    }
+
+    glContext.programID = glCreateProgram();//in-built create program function
+    glAttachShader(glContext.programID, vertexShaderID);
+    glAttachShader(glContext.programID, fragmentShaderID);
+    glLinkProgram(glContext.programID);
+
+    //Detach shaders
+    glDetachShader(glContext.programID, vertexShaderID);
+    glDetachShader(glContext.programID, fragmentShaderID);
+    glDeleteShader(vertexShaderID);
+    glDeleteShader(fragmentShaderID);
+
+    //Vertex Array Object (VAO) - This has to be done, otherwise openGL will not draw anything
+    GLuint VAO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    //Depth testing
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_GREATER);
+
+    //use Program
+    glUseProgram(glContext.programID);
+}
+
 void setup() {
     // ########################################### ALLOCATING PROPERTIES TO PLAYER AND ENEMY ##################################3
     player.x = 0;
@@ -199,6 +272,8 @@ void setup() {
     loadBackgroundTexture();
     //load sprite texture
     loadSpriteTexture();
+    //shader render
+    shaderRender();
 
     return;
 }
@@ -230,7 +305,7 @@ void renderBackground() {
 // Function to render the sprite
 void renderSprite() {
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, glContext.textureID);
+    glBindTexture(GL_TEXTURE_2D, spriteTextureID);
 
     // Calculate texture coordinates
     float textureWidth = 1.0f;
@@ -414,82 +489,6 @@ void update() {
     enemy.isAttacking = false;
 }
 
-void shaderRender() {
-    // ############################################## SHADERS CODE STARTS HERE ##############################################
-    //Assigning transientStorage for shaders
-    transientStorage = make_bump_allocator(MB(1));
-
-    //Create Shaders
-    vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-    fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-
-    //Read the vertex shader and fragment shader from the .frag and .vert files
-    int fileSize = 0;
-    char* vertShader = read_file2("./quad.vert", &fileSize, &transientStorage);
-    char* fragmentShader = read_file2("./quad.frag", &fileSize, &transientStorage);
-    if (!vertShader || !fragmentShader) {
-        printf("Failed to load shaders \n");
-        exit(0);
-    }
-
-    //Now we can connect sources with shaderIDS
-    //In-built glShaderSource() function
-    glShaderSource(vertexShaderID, 1, &vertShader, 0);
-    glShaderSource(fragmentShaderID, 1, &fragmentShader, 0);
-
-    //Compile the shader code after linking the source with shaderIDS -> using inbuilt glCompileShader() function
-    glCompileShader(vertexShaderID);
-    glCompileShader(fragmentShaderID);
-
-    //Test wether vertex shaders compiled successfully
-    {
-        int success;
-        char shaderLog[2048] = {};
-        glGetShaderiv(vertexShaderID, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(vertexShaderID, 2048, 0, shaderLog);
-            printf("Failed to compile vertex shaders : %s", shaderLog);
-        }
-    }
-
-    //Test wether fragment shaders compiled successfully
-    {
-        int success;
-        char shaderLog[2048] = {};
-        glGetShaderiv(fragmentShaderID, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(fragmentShaderID, 2048, 0, shaderLog);
-            printf("Failed to compile fragment shaders : %s", shaderLog);
-        }
-    }
-
-    glContext.programID = glCreateProgram();//in-built create program function
-    glAttachShader(glContext.programID, vertexShaderID);
-    glAttachShader(glContext.programID, fragmentShaderID);
-    glLinkProgram(glContext.programID);
-
-    //Detach shaders
-    glDetachShader(glContext.programID, vertexShaderID);
-    glDetachShader(glContext.programID, fragmentShaderID);
-    glDeleteShader(vertexShaderID);
-    glDeleteShader(fragmentShaderID);
-
-    //Vertex Array Object (VAO) - This has to be done, otherwise openGL will not draw anything
-    GLuint VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-
-    //Depth testing
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_GREATER);
-
-    //use Program
-    //glUseProgram(glContext.programID);
-
-   // glClearColor(119.0f/255.0f,33.0f/255.0f,111.0f/255.0f,1.0f);
-    //glDrawArrays(GL_TRIANGLES, 0, 3);
-}
-
 // ######################################### RENDER() OF GAME LOOP ########################################################
 
 void render() {
@@ -499,6 +498,7 @@ void render() {
     //render player sprite and enemy sprite
     renderSprite();
 
+    /*
     glColor3f(1.0f, 0.0f, 0.0f);
     glBegin(GL_QUADS);
     glVertex2f(player.x, WINDOW_HEIGHT - player.y);
@@ -514,6 +514,8 @@ void render() {
     glVertex2f(enemy.x + enemy.width, WINDOW_HEIGHT - enemy.y - enemy.height);
     glVertex2f(enemy.x, WINDOW_HEIGHT - enemy.y - enemy.height);
     glEnd();
+
+    */
 
     //Player Attack Box
     if (glfwGetTime() - player.lastAttackTime <= 0.1) {
@@ -558,8 +560,11 @@ void render() {
     // Reset color to white before rendering other objects
     glColor3f(1.0f, 1.0f, 1.0f);
 
-    //shader render call
-    shaderRender();
+    //shader cleanup
+    glClearColor(119.0f / 255.0f, 33.0f / 255.0f, 111.0f / 255.0f, 1.0f);
+    glClearDepth(0.0f);
+    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glfwSwapBuffers(window);
 }
@@ -695,7 +700,7 @@ int main() {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
-    if (!gladLoadGL(glfwGetProcAddress)){
+    if (!gladLoadGL(glfwGetProcAddress)) {
         printf("Failed to initialize GLAD\n");
         glfwTerminate();
         return -1;
@@ -710,7 +715,6 @@ int main() {
     // Game loop
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glClearDepth(0.0f);
 
         // Update and render
         timer();
