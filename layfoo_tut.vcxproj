@@ -107,7 +107,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Users\Simardeep Singh\Downloads\glad\include\glad;C:\Users\Simardeep Singh\Downloads\glew-2.1.0-win32\glew-2.1.0\include;C:\Users\Simardeep Singh\Downloads\glm-0.9.8.4\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -142,8 +142,13 @@
   <ItemGroup>
     <ClInclude Include="constants.h" />
     <ClInclude Include="glad\gl.h" />
+    <ClInclude Include="MemoryAndFileIO.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="stb_image.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="quad.frag" />
+    <None Include="quad.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

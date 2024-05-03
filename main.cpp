@@ -5,14 +5,31 @@
 
 #include "constants.h"
 
+#include "MemoryAndFileIO.h"
+
 // STB_IMPORTING for images
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+//Bump Allocator Code:
+BumpAllocator transientStorage;
+
 int last_frame_time = 0;
 GLFWwindow* window;
-GLuint vertexShaderID;
 
+//Shaders
+GLuint vertexShaderID;
+GLuint fragmentShaderID;
+
+//GLContext
+struct GLContext {
+    GLuint programID;
+    GLuint textureID;
+};
+
+static GLContext glContext;
+
+// ######################################## BACKGROUND AND PLAYER SPRITE IMAGE LOADING LOGIC ####################################
 // Function to load the background image
 GLuint backgroundTextureID;
 void loadBackgroundTexture() {
@@ -26,14 +43,21 @@ void loadBackgroundTexture() {
         exit(1);
     }
 
-    glGenTextures(1, &backgroundTextureID);
-    glBindTexture(GL_TEXTURE_2D, backgroundTextureID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-    stbi_image_free(image);
+    glGenTextures(1, &glContext.textureID);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, glContext.textureID);
+   
 
     // Set texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+
+    stbi_image_free(image);
 }
 
 // Load sprite texture
@@ -79,6 +103,8 @@ void loadSpriteTexture() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
+
+// ############################################## PLAYER AND ENEMY STRUCT DEFINATION #############################################
 
 struct Player {
     float x;
@@ -129,6 +155,7 @@ struct Enemy {
 } enemy;
 
 void setup() {
+    // ########################################### ALLOCATING PROPERTIES TO PLAYER AND ENEMY ##################################3
     player.x = 0;
     player.y = 0;
     player.width = 50;
@@ -166,20 +193,22 @@ void setup() {
     enemy.healthBarWidth = 500;
     enemy.lastAttackTime = 0.0;
 
+    // ############################################# TEXTURE LOADING #######################################################
     //Setting up background image texture
     // Load background texture
     loadBackgroundTexture();
     //load sprite texture
     loadSpriteTexture();
 
-    //Create Shaders
-    vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+    return;
 }
+
+// ########################## BACKGROUND AND SPRITE RENDER LOGIC WHICH IS TRIGGERED IN RENDER() IN GAME LOOP ##################
 
 // Function to render a full-screen quad with the background image
 void renderBackground() {
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, backgroundTextureID);
+    glBindTexture(GL_TEXTURE_2D, glContext.textureID);
 
     glBegin(GL_QUADS);
     glTexCoord2f(0.0f, 1.0f); // Texture coordinate (bottom left)
@@ -248,6 +277,8 @@ void renderSprite() {
     glDisable(GL_TEXTURE_2D);
 }
 
+// ############################################# PROCESSING KEYBOARD INPUT ################################################
+
 void process_input(int key, int, int) {
     switch (key) {
     case GLFW_KEY_D:
@@ -276,6 +307,8 @@ void process_input(int key, int, int) {
     }
 }
 
+// ###################################### PROCESSING SPECIAL KEYS ON KEYBOARD ######################################
+
 void special(int key, int, int) {
     switch (key) {
     case GLFW_KEY_LEFT: // Left arrow key
@@ -299,6 +332,8 @@ void special(int key, int, int) {
         break;
     }
 }
+
+// ############################################# UPDATE() OF GAME LOOP ##########################################################
 
 void update() {
     int time_now = glfwGetTime() * 1000; // in milliseconds
@@ -373,6 +408,84 @@ void update() {
     }
 }
 
+void shaderRender() {
+    // ############################################## SHADERS CODE STARTS HERE ##############################################
+    //Assigning transientStorage for shaders
+    transientStorage = make_bump_allocator(MB(50));
+
+    //Create Shaders
+    vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+    fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+
+    //Read the vertex shader and fragment shader from the .frag and .vert files
+    int fileSize = 0;
+    char* vertShader = read_file2("./quad.vert", &fileSize, &transientStorage);
+    char* fragmentShader = read_file2("./quad.frag", &fileSize, &transientStorage);
+    if (!vertShader || !fragmentShader) {
+        printf("Failed to load shaders \n");
+        exit(0);
+    }
+
+    //Now we can connect sources with shaderIDS
+    //In-built glShaderSource() function
+    glShaderSource(vertexShaderID, 1, &vertShader, 0);
+    glShaderSource(fragmentShaderID, 1, &fragmentShader, 0);
+
+    //Compile the shader code after linking the source with shaderIDS -> using inbuilt glCompileShader() function
+    glCompileShader(vertexShaderID);
+    glCompileShader(fragmentShaderID);
+
+    //Test wether vertex shaders compiled successfully
+    {
+        int success;
+        char shaderLog[2048] = {};
+        glGetShaderiv(vertexShaderID, GL_COMPILE_STATUS, &success);
+        if (!success) {
+            glGetShaderInfoLog(vertexShaderID, 2048, 0, shaderLog);
+            printf("Failed to compile vertex shaders : %s", shaderLog);
+        }
+    }
+
+    //Test wether fragment shaders compiled successfully
+    {
+        int success;
+        char shaderLog[2048] = {};
+        glGetShaderiv(fragmentShaderID, GL_COMPILE_STATUS, &success);
+        if (!success) {
+            glGetShaderInfoLog(fragmentShaderID, 2048, 0, shaderLog);
+            printf("Failed to compile fragment shaders : %s", shaderLog);
+        }
+    }
+
+    glContext.programID = glCreateProgram();//in-built create program function
+    glAttachShader(glContext.programID, vertexShaderID);
+    glAttachShader(glContext.programID, fragmentShaderID);
+    glLinkProgram(glContext.programID);
+
+    //Detach shaders
+    glDetachShader(glContext.programID, vertexShaderID);
+    glDetachShader(glContext.programID, fragmentShaderID);
+    glDeleteShader(vertexShaderID);
+    glDeleteShader(fragmentShaderID);
+
+    //Vertex Array Object (VAO) - This has to be done, otherwise openGL will not draw anything
+    GLuint VAO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    //Depth testing
+    //glEnable(GL_DEPTH_TEST);
+    //glDepthFunc(GL_GREATER);
+
+    //use Program
+    //glUseProgram(glContext.programID);
+
+    //glClearColor(119.0f/255.0f,33.0f/255.0f,111.0f/255.0f,1.0f);
+    //glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+// ######################################### RENDER() OF GAME LOOP ########################################################
+
 void render() {
     //Rendering the background image
     renderBackground();
@@ -438,8 +551,14 @@ void render() {
 
     //render player sprite and enemy sprite
     renderSprite();
+
+    //shader render call
+    //shaderRender();
+
+    glfwSwapBuffers(window);
 }
 
+// #################################### KEYBOARD PROCESSING CALLS PROCESS_INPUT() ###########################################
 void keyboard(int key, int, int) {
     switch (key) {
     case GLFW_KEY_D:
@@ -453,6 +572,7 @@ void keyboard(int key, int, int) {
     }
 }
 
+// ############################################## INIT() OF GAME LOOP #####################################################
 void init() {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glMatrixMode(GL_PROJECTION);
@@ -462,6 +582,7 @@ void init() {
     glLoadIdentity();
 }
 
+// ############################################ PROCESS_RELEASE FOR KEYBOARD #################################################
 void process_release(int key, int, int) {
     switch (key) {
     case GLFW_KEY_D:
@@ -478,7 +599,7 @@ void process_release(int key, int, int) {
         break;
     }
 }
-
+// ########################################## PROCESS_SPECIAL_RELEASE FOR SPECIAL KEYS #############################
 void process_special_release(int key, int, int) {
     switch (key) {
     case GLFW_KEY_LEFT:
@@ -507,6 +628,7 @@ void special_release(int key, int, int) {
     }
 }
 
+// ##################################### TIMER() FUNC OF GAME LOOP WHICH CALLS UPDATE() #####################################
 void timer() {
     static double lastTime = glfwGetTime();
     double currentTime = glfwGetTime();
@@ -517,6 +639,7 @@ void timer() {
     lastTime = currentTime;
 }
 
+// ###################################### KEYBOARD() FUNCTION ###############################################################
 void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS) {
         process_input(key, 0, 0);
@@ -541,12 +664,14 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods) {
     }
 }
 
+// ######################################## VARIABLE WINDOW SIZE ADJUSTMENT ###################################################
 // Callback function to handle window resizing
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     // Adjust the viewport when the window is resized
     glViewport(0, 0, width, height);
 }
 
+// ######################################## INT MAIN() FUNCTION ################################################################
 int main() {
     if (!glfwInit()) {
         return -1;
@@ -578,13 +703,12 @@ int main() {
 
     // Game loop
     while (!glfwWindowShouldClose(window)) {
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Update and render
         timer();
         render();
 
-        glfwSwapBuffers(window);
         glfwPollEvents();
     }
 

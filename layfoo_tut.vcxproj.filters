@@ -38,5 +38,12 @@
     <ClInclude Include="glad\gl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MemoryAndFileIO.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="quad.vert" />
+    <None Include="quad.frag" />
   </ItemGroup>
 </Project>
