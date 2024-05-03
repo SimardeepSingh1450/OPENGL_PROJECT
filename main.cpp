@@ -21,7 +21,7 @@ GLFWwindow* window;
 GLuint vertexShaderID;
 GLuint fragmentShaderID;
 
-//GLContext
+//GLContext - currently being used for background
 struct GLContext {
     GLuint programID;
     GLuint textureID;
@@ -43,9 +43,9 @@ void loadBackgroundTexture() {
         exit(1);
     }
 
-    glGenTextures(1, &glContext.textureID);
+    glGenTextures(1, &backgroundTextureID);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, glContext.textureID);
+    glBindTexture(GL_TEXTURE_2D, backgroundTextureID);
    
 
     // Set texture parameters
@@ -74,8 +74,8 @@ void loadSpriteTexture() {
         exit(1);
     }
 
-    glGenTextures(1, &spriteTextureID);
-    glBindTexture(GL_TEXTURE_2D, spriteTextureID);
+    glGenTextures(1, &glContext.textureID);
+    glBindTexture(GL_TEXTURE_2D, glContext.textureID);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image); // Use GL_RGBA for PNG images with alpha channel
     stbi_image_free(image);
 
@@ -208,7 +208,7 @@ void setup() {
 // Function to render a full-screen quad with the background image
 void renderBackground() {
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, glContext.textureID);
+    glBindTexture(GL_TEXTURE_2D, backgroundTextureID);
 
     glBegin(GL_QUADS);
     glTexCoord2f(0.0f, 1.0f); // Texture coordinate (bottom left)
@@ -230,7 +230,7 @@ void renderBackground() {
 // Function to render the sprite
 void renderSprite() {
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, spriteTextureID);
+    glBindTexture(GL_TEXTURE_2D, glContext.textureID);
 
     // Calculate texture coordinates
     float textureWidth = 1.0f;
@@ -296,7 +296,7 @@ void process_input(int key, int, int) {
         break;
     case GLFW_KEY_SPACE:
         //printf("spacebar pressed\n");
-        if (glfwGetTime() - player.lastAttackTime >= 0.3) { // Check if enough time has passed since the last attack
+        if (glfwGetTime() - player.lastAttackTime >= 0.1) { // Check if enough time has passed since the last attack
             player.isAttacking = true;
             player.lastAttackTime = glfwGetTime(); // Update the last attack time
         }
@@ -325,7 +325,7 @@ void special(int key, int, int) {
         enemy.velocityY -= 2000;
         break;
     case GLFW_KEY_DOWN: // down arrow key
-        if (glfwGetTime() - enemy.lastAttackTime >= 0.3) { // Check if enough time has passed since the last attack
+        if (glfwGetTime() - enemy.lastAttackTime >= 0.1) { // Check if enough time has passed since the last attack
             enemy.isAttacking = true;
             enemy.lastAttackTime = glfwGetTime(); // Update the last attack time
         }
@@ -513,7 +513,7 @@ void render() {
     glEnd();
 
     //Player Attack Box
-    if (player.isAttacking == true) {
+    if (glfwGetTime() - player.lastAttackTime <= 0.1) {
         glColor3f(0.0f, 1.0f, 0.0f);
         glBegin(GL_QUADS);
         glVertex2f(player.x, WINDOW_HEIGHT - player.y);
@@ -523,7 +523,7 @@ void render() {
         glEnd();
     }
     //Enemy Attack Box
-    if (enemy.isAttacking == true) {
+    if (glfwGetTime() - enemy.lastAttackTime <= 0.1) {
         glColor3f(0.0f, 1.0f, 0.0f);
         glBegin(GL_QUADS);
         glVertex2f(enemy.x - 50, WINDOW_HEIGHT - enemy.y);
