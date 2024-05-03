@@ -296,7 +296,7 @@ void process_input(int key, int, int) {
         break;
     case GLFW_KEY_SPACE:
         //printf("spacebar pressed\n");
-        if (glfwGetTime() - player.lastAttackTime >= 0.1) { // Check if enough time has passed since the last attack
+        if (glfwGetTime() - player.lastAttackTime >= 0.3) { // Check if enough time has passed since the last attack
             player.isAttacking = true;
             player.lastAttackTime = glfwGetTime(); // Update the last attack time
         }
@@ -325,7 +325,7 @@ void special(int key, int, int) {
         enemy.velocityY -= 2000;
         break;
     case GLFW_KEY_DOWN: // down arrow key
-        if (glfwGetTime() - enemy.lastAttackTime >= 0.1) { // Check if enough time has passed since the last attack
+        if (glfwGetTime() - enemy.lastAttackTime >= 0.3) { // Check if enough time has passed since the last attack
             enemy.isAttacking = true;
             enemy.lastAttackTime = glfwGetTime(); // Update the last attack time
         }
@@ -375,6 +375,9 @@ void update() {
         }
     }
 
+    //Setting player.isAttacking == false in a loop and activating only when spacebar is pressed
+    player.isAttacking = false;
+
     //Enemy Logic
     enemy.x += enemy.velocityX * delta_time;
     enemy.y += enemy.velocityY * delta_time;
@@ -406,6 +409,9 @@ void update() {
             //exit(0);
         }
     }
+
+    //Setting enemy.isAttacking == false in a loop and activating only when spacebar is pressed
+    enemy.isAttacking = false;
 }
 
 void shaderRender() {
