@@ -417,7 +417,7 @@ void update() {
 void shaderRender() {
     // ############################################## SHADERS CODE STARTS HERE ##############################################
     //Assigning transientStorage for shaders
-    transientStorage = make_bump_allocator(MB(50));
+    transientStorage = make_bump_allocator(MB(1));
 
     //Create Shaders
     vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
@@ -480,14 +480,14 @@ void shaderRender() {
     glBindVertexArray(VAO);
 
     //Depth testing
-    //glEnable(GL_DEPTH_TEST);
-    //glDepthFunc(GL_GREATER);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_GREATER);
 
     //use Program
     //glUseProgram(glContext.programID);
 
-    //glClearColor(119.0f/255.0f,33.0f/255.0f,111.0f/255.0f,1.0f);
-    //glDrawArrays(GL_TRIANGLES, 0, 6);
+   // glClearColor(119.0f/255.0f,33.0f/255.0f,111.0f/255.0f,1.0f);
+    //glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
 // ######################################### RENDER() OF GAME LOOP ########################################################
@@ -495,6 +495,9 @@ void shaderRender() {
 void render() {
     //Rendering the background image
     renderBackground();
+
+    //render player sprite and enemy sprite
+    renderSprite();
 
     glColor3f(1.0f, 0.0f, 0.0f);
     glBegin(GL_QUADS);
@@ -555,11 +558,8 @@ void render() {
     // Reset color to white before rendering other objects
     glColor3f(1.0f, 1.0f, 1.0f);
 
-    //render player sprite and enemy sprite
-    renderSprite();
-
     //shader render call
-    //shaderRender();
+    shaderRender();
 
     glfwSwapBuffers(window);
 }
@@ -710,6 +710,7 @@ int main() {
     // Game loop
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClearDepth(0.0f);
 
         // Update and render
         timer();
