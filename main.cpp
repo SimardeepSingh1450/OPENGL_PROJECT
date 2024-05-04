@@ -17,6 +17,77 @@ BumpAllocator transientStorage;
 int last_frame_time = 0;
 GLFWwindow* window;
 
+bool gameEnd = false;
+int winner = -1;//winner == 0 for player and == 1 for enemy
+
+//Screen Texture for gameEnd
+GLuint finishTextureID1, finishTextureID2;
+void loadFinish1Texture() {
+    int width, height, channels;
+    unsigned char* image = stbi_load("./assets/p1won.png", &width, &height, &channels, STBI_rgb_alpha);
+
+    if (image == nullptr) {
+        printf("Failed to load background image.\n");
+        // Print more details about the error if available
+        printf("Error: %s\n", stbi_failure_reason());
+        exit(1);
+    }
+
+    glGenTextures(1, &finishTextureID1);
+    glBindTexture(GL_TEXTURE_2D, finishTextureID1);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image); // Use GL_RGBA for PNG images with alpha channel
+    stbi_image_free(image);
+
+    // Set texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // Set texture wrapping to repeat
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // Set texture filtering to linear
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Generate mipmaps
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    // Unbind texture
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void loadFinish2Texture() {
+    int width, height, channels;
+    unsigned char* image = stbi_load("./assets/p2won.png", &width, &height, &channels, STBI_rgb_alpha);
+
+    if (image == nullptr) {
+        printf("Failed to load background image.\n");
+        // Print more details about the error if available
+        printf("Error: %s\n", stbi_failure_reason());
+        exit(1);
+    }
+
+    glGenTextures(1, &finishTextureID2);
+    glBindTexture(GL_TEXTURE_2D, finishTextureID2);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image); // Use GL_RGBA for PNG images with alpha channel
+    stbi_image_free(image);
+
+    // Set texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // Set texture wrapping to repeat
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // Set texture filtering to linear
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Generate mipmaps
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    // Unbind texture
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void loadFinishTexture() {
+    //load player-1 win texture
+    loadFinish1Texture();
+
+    //load player-2 win texture
+    loadFinish2Texture();
+}
+
 // ######################################## BACKGROUND AND PLAYER SPRITE IMAGE LOADING LOGIC ####################################
 // Function to load the background image
 GLuint backgroundTextureID;
@@ -294,11 +365,13 @@ void setup() {
     loadBackgroundTexture();
     //load sprite texture
     loadSpriteTexture();
+    //load finish texture
+    loadFinishTexture();
 
     return;
 }
 
-// ########################## BACKGROUND AND SPRITE RENDER LOGIC WHICH IS TRIGGERED IN RENDER() IN GAME LOOP ##################
+// ########################## BACKGROUND, FINISH & SPRITE RENDER LOGIC WHICH IS TRIGGERED IN RENDER() IN GAME LOOP ##################
 
 // Function to render a full-screen quad with the background image
 void renderBackground() {
@@ -320,6 +393,60 @@ void renderBackground() {
     glEnd();
 
     glDisable(GL_TEXTURE_2D);
+}
+
+void renderFinish1() {
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, finishTextureID1);
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 1.0f); // Texture coordinate (bottom left)
+    glVertex2f(0, 0);
+
+    glTexCoord2f(1.0f, 1.0f); // Texture coordinate (bottom right)
+    glVertex2f(WINDOW_WIDTH, 0);
+
+    glTexCoord2f(1.0f, 0.0f); // Texture coordinate (top right)
+    glVertex2f(WINDOW_WIDTH, WINDOW_HEIGHT);
+
+    glTexCoord2f(0.0f, 0.0f); // Texture coordinate (top left)
+    glVertex2f(0, WINDOW_HEIGHT);
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+}
+
+void renderFinish2() {
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, finishTextureID2);
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 1.0f); // Texture coordinate (bottom left)
+    glVertex2f(0, 0);
+
+    glTexCoord2f(1.0f, 1.0f); // Texture coordinate (bottom right)
+    glVertex2f(WINDOW_WIDTH, 0);
+
+    glTexCoord2f(1.0f, 0.0f); // Texture coordinate (top right)
+    glVertex2f(WINDOW_WIDTH, WINDOW_HEIGHT);
+
+    glTexCoord2f(0.0f, 0.0f); // Texture coordinate (top left)
+    glVertex2f(0, WINDOW_HEIGHT);
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+}
+
+// Function to render a full-screen quad with the background image
+void renderFinish() {
+    if (gameEnd == true) {
+        if (winner == 0) {
+            renderFinish1();
+        }
+        else {
+            renderFinish2();
+        }
+    }
 }
 
 void renderPlayerIdleSprite() {
@@ -443,6 +570,8 @@ void renderSprite() {
     //Eenemy Kick State Sprite Render Call
     if (glfwGetTime() - enemy.lastAttackTime <= 0.3)
         renderEnemyKickSprite();
+
+    renderFinish();
 }
 
 // ############################################# PROCESSING KEYBOARD INPUT ################################################
@@ -533,11 +662,13 @@ void update() {
     bool yCollisionCondition = player.attackBoxPositionY + player.attackBoxHeight >= enemy.y - 100 && player.attackBoxPositionY - 100 <= (enemy.y + enemy.height);
     if (xCollisionCondition && yCollisionCondition && player.isAttacking == true) {
         //Reduce enemy health width
-        enemy.healthBarWidth -= (float)(enemy.healthBarWidth * 0.10);
+        enemy.healthBarWidth -= (float)(enemy.healthBarWidth * 0.30);
         printf("Player attacked enemy!! \n");
 
         //printf("Enemy Health: %f \n",enemy.healthBarWidth);
-        if (enemy.healthBarWidth <= 0.03) {
+        if (enemy.healthBarWidth <= 1) {
+            gameEnd = true;
+            winner = 0;
             printf("Player Won!!\n");
             //exit(0);
         }
@@ -569,11 +700,13 @@ void update() {
     bool yCollisionCondition2 = enemy.y + enemy.height + 30 >= player.y && player.y + player.height >= enemy.y - 50;
     if (xCollisionCondition2 && yCollisionCondition2 && enemy.isAttacking == true) {
         //Reduce player health width
-        player.healthBarWidth -= (float)(player.healthBarWidth * 0.05);
+        player.healthBarWidth -= (float)(player.healthBarWidth * 0.20);
         printf("Enemy attacked Player!! \n");
 
-        if (player.healthBarWidth <= 0.03) {
+        if (player.healthBarWidth <= 1) {
             printf("Enemy Won!!\n");
+            gameEnd = true;
+            winner = 1;
             //exit(0);
         }
     }
