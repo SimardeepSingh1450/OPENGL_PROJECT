@@ -50,11 +50,11 @@ void loadBackgroundTexture() {
 }
 
 // Load sprite texture
-GLuint spriteTextureID;
+GLuint spriteTextureID, spriteKickTextureID;
 GLuint enemySpriteTextureID;
 void loadSpriteTexture() {
     int width, height, channels;
-    unsigned char* image = stbi_load("./assets/test.png", &width, &height, &channels, STBI_rgb_alpha); // Use STBI_rgb_alpha for PNG images with alpha channel
+    unsigned char* image = stbi_load("./assets/goukenIdle.png", &width, &height, &channels, STBI_rgb_alpha); // Use STBI_rgb_alpha for PNG images with alpha channel
 
     if (image == nullptr) {
         printf("Failed to load sprite image.\n");
@@ -84,9 +84,10 @@ void loadSpriteTexture() {
     // Unbind texture
     glBindTexture(GL_TEXTURE_2D, 0);
 
+
     //Enemy Sprite Load Logic
     int width2, height2, channels2;
-    unsigned char* image2 = stbi_load("./assets/test2.png", &width2, &height2, &channels2, STBI_rgb_alpha); // Use STBI_rgb_alpha for PNG images with alpha channel
+    unsigned char* image2 = stbi_load("./assets/enemy.png", &width2, &height2, &channels2, STBI_rgb_alpha); // Use STBI_rgb_alpha for PNG images with alpha channel
 
     if (image2 == nullptr) {
         printf("Failed to load sprite image.\n");
@@ -97,7 +98,7 @@ void loadSpriteTexture() {
 
     glGenTextures(1, &enemySpriteTextureID);
     glBindTexture(GL_TEXTURE_2D, enemySpriteTextureID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image2); // Use GL_RGBA for PNG images with alpha channel
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width2, height2, 0, GL_RGBA, GL_UNSIGNED_BYTE, image2); // Use GL_RGBA for PNG images with alpha channel
     stbi_image_free(image2);
 
     // Set texture parameters
@@ -169,7 +170,7 @@ struct Enemy {
 
 void setup() {
     // ########################################### ALLOCATING PROPERTIES TO PLAYER AND ENEMY ##################################3
-    player.x = 0;
+    player.x = 200;
     player.y = 0;
     player.width = 50;
     player.height = 150;
@@ -185,10 +186,10 @@ void setup() {
     player.isAttacking = false;
     player.attackTimerRunning = false;//attack timer for toggle
     player.healthBarHeight = 50;
-    player.healthBarWidth = 500;
+    player.healthBarWidth = 650;
     player.lastAttackTime = 0.0;
 
-    enemy.x = 400;
+    enemy.x = WINDOW_WIDTH/2+400;
     enemy.y = 0;
     enemy.width = 50;
     enemy.height = 150;
@@ -203,7 +204,7 @@ void setup() {
     enemy.isAttacking = false;
     enemy.attackTimerRunning = false;//attack timer for toggle
     enemy.healthBarHeight = 50;
-    enemy.healthBarWidth = 500;
+    enemy.healthBarWidth = 650;
     enemy.lastAttackTime = 0.0;
 
     // ############################################# TEXTURE LOADING #######################################################
@@ -242,22 +243,24 @@ void renderBackground() {
 
 // Function to render the sprite
 void renderSprite() {
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, spriteTextureID);
 
     // Calculate texture coordinates
     float textureWidth = 1.0f;
     float textureHeight = 1.0f;
 
+    // Render Player Sprite
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, spriteTextureID);
+
     glBegin(GL_QUADS);
     glTexCoord2f(0.0f, 0.0f); //Texture top-left cooridnate
-    glVertex2f(player.x, WINDOW_HEIGHT - player.y);
+    glVertex2f(player.x, WINDOW_HEIGHT - player.y + 100);
 
     glTexCoord2f(textureWidth, 0.0f); //Texture top-right cooridnate
-    glVertex2f(player.x + player.width + 250, WINDOW_HEIGHT - player.y);
+    glVertex2f(player.x + player.width + 200, WINDOW_HEIGHT - player.y + 100);
 
     glTexCoord2f(textureWidth, textureHeight);
-    glVertex2f(player.x + player.width + 250, WINDOW_HEIGHT - (player.y + player.height));
+    glVertex2f(player.x + player.width + 200, WINDOW_HEIGHT - (player.y + player.height));
 
     glTexCoord2f(0.0f, textureHeight);
     glVertex2f(player.x, WINDOW_HEIGHT - (player.y + player.height));
@@ -275,13 +278,13 @@ void renderSprite() {
 
     glBegin(GL_QUADS);
     glTexCoord2f(0.0f, 0.0f); //Texture top-left cooridnate
-    glVertex2f(enemy.x, WINDOW_HEIGHT - enemy.y);
+    glVertex2f(enemy.x, WINDOW_HEIGHT - enemy.y + 90);
 
     glTexCoord2f(textureWidth2, 0.0f); //Texture top-right cooridnate
-    glVertex2f(enemy.x + enemy.width + 250, WINDOW_HEIGHT - enemy.y);
+    glVertex2f(enemy.x + enemy.width - 200, WINDOW_HEIGHT - enemy.y + 90);
 
     glTexCoord2f(textureWidth2, textureHeight2);
-    glVertex2f(enemy.x + enemy.width + 250, WINDOW_HEIGHT - (enemy.y + enemy.height));
+    glVertex2f(enemy.x + enemy.width - 200, WINDOW_HEIGHT - (enemy.y + enemy.height));
 
     glTexCoord2f(0.0f, textureHeight2);
     glVertex2f(enemy.x, WINDOW_HEIGHT - (enemy.y + enemy.height));
@@ -394,7 +397,7 @@ void update() {
     //Enemy Logic
     enemy.x += enemy.velocityX * delta_time;
     enemy.y += enemy.velocityY * delta_time;
-    if (enemy.y + enemy.height + enemy.velocityY * delta_time >= WINDOW_HEIGHT - 120) {
+    if (enemy.y + enemy.height + enemy.velocityY * delta_time >= WINDOW_HEIGHT - 110) {
         enemy.velocityY = 0;
     }
     else {
