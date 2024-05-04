@@ -71,8 +71,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\Simardeep Singh\Downloads\glad\include;C:\Users\Simardeep Singh\Downloads\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\include;C:\Users\Simardeep Singh\Downloads\freeglut-MSVC-3.0.0-2.mp\freeglut\include;C:\Users\Simardeep Singh\Downloads\SDL2_image-devel-2.8.2-VC\SDL2_image-2.8.2\include;C:\Users\Simardeep Singh\Downloads\SDL2-devel-2.30.2-VC\SDL2-2.30.2\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Simardeep Singh\Downloads\freeglut-MSVC-3.0.0-2.mp\freeglut\lib\x64;C:\Users\Simardeep Singh\Downloads\SDL2_image-devel-2.8.2-VC\SDL2_image-2.8.2\lib\x64;C:\Users\Simardeep Singh\Downloads\SDL2-devel-2.30.2-VC\SDL2-2.30.2\lib\x64;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\Simardeep Singh\Downloads\irrKlang-64bit-1.6.0\irrKlang-64bit-1.6.0\include;C:\Users\Simardeep Singh\Downloads\glad\include;C:\Users\Simardeep Singh\Downloads\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\include;C:\Users\Simardeep Singh\Downloads\freeglut-MSVC-3.0.0-2.mp\freeglut\include;C:\Users\Simardeep Singh\Downloads\SDL2_image-devel-2.8.2-VC\SDL2_image-2.8.2\include;C:\Users\Simardeep Singh\Downloads\SDL2-devel-2.30.2-VC\SDL2-2.30.2\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Simardeep Singh\Downloads\irrKlang-64bit-1.6.0\irrKlang-64bit-1.6.0\lib\Winx64-visualStudio;C:\Users\Simardeep Singh\Downloads\freeglut-MSVC-3.0.0-2.mp\freeglut\lib\x64;C:\Users\Simardeep Singh\Downloads\SDL2_image-devel-2.8.2-VC\SDL2_image-2.8.2\lib\x64;C:\Users\Simardeep Singh\Downloads\SDL2-devel-2.30.2-VC\SDL2-2.30.2\lib\x64;$(LibraryPath)</LibraryPath>
     <SourcePath>C:\Users\Simardeep Singh\Downloads\glad\src;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -114,7 +114,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;OpenGL32.lib;freeglut.lib;glfw3.lib;user32.lib;gdi32.lib;shell32.lib;glew32.lib;msvcrtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;OpenGL32.lib;freeglut.lib;glfw3.lib;user32.lib;gdi32.lib;shell32.lib;glew32.lib;msvcrtd.lib;irrKlang.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\Users\Simardeep Singh\Downloads\glew-2.1.0-win32\glew-2.1.0\lib\Release\x64;C:\Users\Simardeep Singh\Downloads\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\lib-vc2022;C:\Users\Simardeep Singh\Downloads\SDL2-devel-2.30.2-VC\SDL2-2.30.2\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>

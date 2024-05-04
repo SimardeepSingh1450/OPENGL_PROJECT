@@ -3,6 +3,9 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
+#include<irrKlang.h>
+using namespace irrklang;
+
 #include "constants.h"
 
 #include "utilityFunctions.h"
@@ -10,6 +13,9 @@
 // STB_IMPORTING for images
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+
+//Audio engine
+ISoundEngine* engine;
 
 //Bump Allocator Code:
 BumpAllocator transientStorage;
@@ -904,6 +910,15 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
+// ##################################### AUDIO CALLER FUNCTIONS ################################################################
+void kickAudioCall() {
+    engine->play2D("./assets/audio/kick.wav", false);
+}
+
+void hitAudioCall() {
+    engine->play2D("./assets/audio/hit.wav", false);
+}
+
 // ######################################## INT MAIN() FUNCTION ################################################################
 int main() {
     if (!glfwInit()) {
@@ -915,6 +930,12 @@ int main() {
         glfwTerminate();
         return -1;
     }
+
+    //Sound setup
+    engine = createIrrKlangDevice();
+    if (!engine) return 0;
+
+
 
     // Set the framebuffer size callback to handle window resizing
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -934,10 +955,23 @@ int main() {
     // Set keyboard callback functions
     glfwSetKeyCallback(window, keyboard);
 
+    //Start game audio before game loop
+    engine->play2D("./assets/audio/background.mp3",true);
+
     // Game loop
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearDepth(1.0f);
+
+        //Player attack audio render
+        if (glfwGetTime() - player.lastAttackTime <= 0.001) {
+            kickAudioCall();
+        }
+
+        //Enemy attack audio render
+        if (glfwGetTime() - enemy.lastAttackTime <= 0.001) {
+            hitAudioCall();
+        }
 
         // Update and render
         timer();
@@ -945,6 +979,9 @@ int main() {
 
         glfwPollEvents();
     }
+
+    //stop audio engine
+    engine->drop();
 
     glfwTerminate();
     return 0;
