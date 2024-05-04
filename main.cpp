@@ -493,7 +493,7 @@ void special(int key, int, int) {
         enemy.velocityY -= 2000;
         break;
     case GLFW_KEY_DOWN: // down arrow key
-        if (glfwGetTime() - enemy.lastAttackTime >= 0.1) { // Check if enough time has passed since the last attack
+        if (glfwGetTime() - enemy.lastAttackTime >= 0.3) { // Check if enough time has passed since the last attack
             enemy.isAttacking = true;
             enemy.lastAttackTime = glfwGetTime(); // Update the last attack time
         }
@@ -569,7 +569,7 @@ void update() {
     bool yCollisionCondition2 = enemy.y + enemy.height + 30 >= player.y && player.y + player.height >= enemy.y - 50;
     if (xCollisionCondition2 && yCollisionCondition2 && enemy.isAttacking == true) {
         //Reduce player health width
-        player.healthBarWidth -= (float)(player.healthBarWidth * 0.10);
+        player.healthBarWidth -= (float)(player.healthBarWidth * 0.05);
         printf("Enemy attacked Player!! \n");
 
         if (player.healthBarWidth <= 0.03) {
