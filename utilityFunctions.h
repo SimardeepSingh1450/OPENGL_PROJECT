@@ -69,27 +69,6 @@ char* bump_alloc(BumpAllocator* bumpAllocator, size_t size)
 // #############################################################################
 //                           File I/O
 // #############################################################################
-long long get_timestamp(const char* file)
-{
-    struct stat file_stat = {};
-    stat(file, &file_stat);
-    return file_stat.st_mtime;
-}
-
-bool file_exists(const char* filePath)
-{
-    //printf("No filePath supplied! \n");
-
-    auto file = fopen(filePath, "rb");
-    if (!file)
-    {
-        return false;
-    }
-    fclose(file);
-
-    return true;
-}
-
 long get_file_size(const char* filePath)
 {
     //printf("No filePath supplied!\n");
@@ -154,58 +133,4 @@ char* read_file2(const char* filePath, int* fileSize, BumpAllocator* bumpAllocat
     }
 
     return file;
-}
-
-void write_file(const char* filePath, char* buffer, int size)
-{
-    //printf("No filePath supplied! \n");
-    //printf("No buffer supplied! \n");
-    auto file = fopen(filePath, "wb");
-    if (!file)
-    {
-        printf("Failed opening File: %s", filePath);
-        return;
-    }
-
-    fwrite(buffer, sizeof(char), size, file);
-    fclose(file);
-}
-
-bool copy_file(const char* fileName, const char* outputName, char* buffer)
-{
-    int fileSize = 0;
-    char* data = read_file(fileName, &fileSize, buffer);
-
-    auto outputFile = fopen(outputName, "wb");
-    if (!outputFile)
-    {
-        printf("Failed opening File: %s", outputName);
-        return false;
-    }
-
-    int result = fwrite(data, sizeof(char), fileSize, outputFile);
-    if (!result)
-    {
-        printf("Failed opening File: %s", outputName);
-        return false;
-    }
-
-    fclose(outputFile);
-
-    return true;
-}
-
-bool copy_file(const char* fileName, const char* outputName, BumpAllocator* bumpAllocator)
-{
-    char* file = 0;
-    long fileSize2 = get_file_size(fileName);
-
-    if (fileSize2)
-    {
-        char* buffer = bump_alloc(bumpAllocator, fileSize2 + 1);
-
-        return copy_file(fileName, outputName, buffer);
-    }
-
-    return false;
 }
