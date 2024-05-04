@@ -5,7 +5,7 @@
 
 #include "constants.h"
 
-#include "MemoryAndFileIO.h"
+#include "utilityFunctions.h"
 
 // STB_IMPORTING for images
 #define STB_IMAGE_IMPLEMENTATION
@@ -16,18 +16,6 @@ BumpAllocator transientStorage;
 
 int last_frame_time = 0;
 GLFWwindow* window;
-
-//Shaders
-GLuint vertexShaderID;
-GLuint fragmentShaderID;
-
-//GLContext - currently being used for background
-struct GLContext {
-    GLuint programID;
-    GLuint textureID;
-};
-
-static GLContext glContext;
 
 // ######################################## BACKGROUND AND PLAYER SPRITE IMAGE LOADING LOGIC ####################################
 // Function to load the background image
@@ -43,21 +31,22 @@ void loadBackgroundTexture() {
         exit(1);
     }
 
-    glGenTextures(1, &glContext.textureID);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, glContext.textureID);
-
+    glGenTextures(1, &backgroundTextureID);
+    glBindTexture(GL_TEXTURE_2D, backgroundTextureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image); // Use GL_RGBA for PNG images with alpha channel
+    stbi_image_free(image);
 
     // Set texture parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // Set texture wrapping to repeat
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // Set texture filtering to linear
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+    // Generate mipmaps
+    glGenerateMipmap(GL_TEXTURE_2D);
 
-    stbi_image_free(image);
+    // Unbind texture
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 // Load sprite texture
@@ -80,8 +69,20 @@ void loadSpriteTexture() {
     stbi_image_free(image);
 
     // Set texture parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // Set texture wrapping to repeat
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // Set texture filtering to linear
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Generate mipmaps
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    // Enable blending
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Unbind texture
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     //Enemy Sprite Load Logic
     int width2, height2, channels2;
@@ -96,12 +97,24 @@ void loadSpriteTexture() {
 
     glGenTextures(1, &enemySpriteTextureID);
     glBindTexture(GL_TEXTURE_2D, enemySpriteTextureID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width2, height2, 0, GL_RGBA, GL_UNSIGNED_BYTE, image2); // Use GL_RGBA for PNG images with alpha channel
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image2); // Use GL_RGBA for PNG images with alpha channel
     stbi_image_free(image2);
 
     // Set texture parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // Set texture wrapping to repeat
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // Set texture filtering to linear
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Generate mipmaps
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    // Enable blending
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Unbind texture
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 // ############################################## PLAYER AND ENEMY STRUCT DEFINATION #############################################
@@ -154,85 +167,6 @@ struct Enemy {
     float lastAttackTime;
 } enemy;
 
-void shaderRender() {
-    // ############################################## SHADERS CODE STARTS HERE ##############################################
-    //Assigning transientStorage for shaders
-    transientStorage = make_bump_allocator(MB(1));
-
-    //Create Shaders
-    vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-    fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-
-    //Read the vertex shader and fragment shader from the .frag and .vert files
-    int fileSize = 0;
-    char* vertShader = read_file2("./quad.vert", &fileSize, &transientStorage);
-    char* fragmentShader = read_file2("./quad.frag", &fileSize, &transientStorage);
-    if (!vertShader || !fragmentShader) {
-        printf("Failed to load shaders \n");
-        exit(0);
-    }
-
-    //Now we can connect sources with shaderIDS
-    //In-built glShaderSource() function
-    glShaderSource(vertexShaderID, 1, &vertShader, 0);
-    glShaderSource(fragmentShaderID, 1, &fragmentShader, 0);
-
-    //Compile the shader code after linking the source with shaderIDS -> using inbuilt glCompileShader() function
-    glCompileShader(vertexShaderID);
-    glCompileShader(fragmentShaderID);
-
-    //Test wether vertex shaders compiled successfully
-    {
-        int success;
-        char shaderLog[2048] = {};
-        glGetShaderiv(vertexShaderID, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(vertexShaderID, 2048, 0, shaderLog);
-            printf("Failed to compile vertex shaders : %s", shaderLog);
-        }
-    }
-
-    //Test wether fragment shaders compiled successfully
-    {
-        int success;
-        char shaderLog[2048] = {};
-        glGetShaderiv(fragmentShaderID, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(fragmentShaderID, 2048, 0, shaderLog);
-            printf("Failed to compile fragment shaders : %s", shaderLog);
-        }
-    }
-
-    glContext.programID = glCreateProgram();//in-built create program function
-    glAttachShader(glContext.programID, vertexShaderID);
-    glAttachShader(glContext.programID, fragmentShaderID);
-    glLinkProgram(glContext.programID);
-
-    //Detach shaders
-    glDetachShader(glContext.programID, vertexShaderID);
-    glDetachShader(glContext.programID, fragmentShaderID);
-    glDeleteShader(vertexShaderID);
-    glDeleteShader(fragmentShaderID);
-
-    //Vertex Array Object (VAO) - This has to be done, otherwise openGL will not draw anything
-    GLuint VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-
-    // Texture Loading using stb_image
-    loadBackgroundTexture();
-
-    //to fix image color darkness
-    glEnable(GL_FRAMEBUFFER_SRGB);
-
-    //Depth testing
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_GREATER);
-
-    //use Program
-    glUseProgram(glContext.programID);
-}
-
 void setup() {
     // ########################################### ALLOCATING PROPERTIES TO PLAYER AND ENEMY ##################################3
     player.x = 0;
@@ -275,11 +209,9 @@ void setup() {
     // ############################################# TEXTURE LOADING #######################################################
     //Setting up background image texture
     // Load background texture
-    //loadBackgroundTexture();
+    loadBackgroundTexture();
     //load sprite texture
-    //loadSpriteTexture();
-    //shader render
-    shaderRender();
+    loadSpriteTexture();
 
     return;
 }
@@ -322,10 +254,10 @@ void renderSprite() {
     glVertex2f(player.x, WINDOW_HEIGHT - player.y);
 
     glTexCoord2f(textureWidth, 0.0f); //Texture top-right cooridnate
-    glVertex2f(player.x + player.width + 150, WINDOW_HEIGHT - player.y);
+    glVertex2f(player.x + player.width + 250, WINDOW_HEIGHT - player.y);
 
     glTexCoord2f(textureWidth, textureHeight);
-    glVertex2f(player.x + player.width + 150, WINDOW_HEIGHT - (player.y + player.height));
+    glVertex2f(player.x + player.width + 250, WINDOW_HEIGHT - (player.y + player.height));
 
     glTexCoord2f(0.0f, textureHeight);
     glVertex2f(player.x, WINDOW_HEIGHT - (player.y + player.height));
@@ -346,10 +278,10 @@ void renderSprite() {
     glVertex2f(enemy.x, WINDOW_HEIGHT - enemy.y);
 
     glTexCoord2f(textureWidth2, 0.0f); //Texture top-right cooridnate
-    glVertex2f(enemy.x + enemy.width + 150, WINDOW_HEIGHT - enemy.y);
+    glVertex2f(enemy.x + enemy.width + 250, WINDOW_HEIGHT - enemy.y);
 
     glTexCoord2f(textureWidth2, textureHeight2);
-    glVertex2f(enemy.x + enemy.width + 150, WINDOW_HEIGHT - (enemy.y + enemy.height));
+    glVertex2f(enemy.x + enemy.width + 250, WINDOW_HEIGHT - (enemy.y + enemy.height));
 
     glTexCoord2f(0.0f, textureHeight2);
     glVertex2f(enemy.x, WINDOW_HEIGHT - (enemy.y + enemy.height));
@@ -426,7 +358,7 @@ void update() {
 
     player.y += player.velocityY * delta_time;
     player.attackBoxPositionY = player.y;
-    if (player.y + player.height + player.velocityY * delta_time >= WINDOW_HEIGHT - 95) {
+    if (player.y + player.height + player.velocityY * delta_time >= WINDOW_HEIGHT - 100) {
         player.velocityY = 0;
     }
     else {
@@ -462,7 +394,7 @@ void update() {
     //Enemy Logic
     enemy.x += enemy.velocityX * delta_time;
     enemy.y += enemy.velocityY * delta_time;
-    if (enemy.y + enemy.height + enemy.velocityY * delta_time >= WINDOW_HEIGHT - 95) {
+    if (enemy.y + enemy.height + enemy.velocityY * delta_time >= WINDOW_HEIGHT - 120) {
         enemy.velocityY = 0;
     }
     else {
@@ -499,10 +431,7 @@ void update() {
 
 void render() {
     //Rendering the background image
-    //renderBackground();
-
-    //render player sprite and enemy sprite
-    //renderSprite();
+    renderBackground();
 
     /*
     glColor3f(1.0f, 0.0f, 0.0f);
@@ -520,7 +449,6 @@ void render() {
     glVertex2f(enemy.x + enemy.width, WINDOW_HEIGHT - enemy.y - enemy.height);
     glVertex2f(enemy.x, WINDOW_HEIGHT - enemy.y - enemy.height);
     glEnd();
-
     */
 
     //Player Attack Box
@@ -566,11 +494,8 @@ void render() {
     // Reset color to white before rendering other objects
     glColor3f(1.0f, 1.0f, 1.0f);
 
-    //shader cleanup
-    glClearColor(119.0f / 255.0f, 33.0f / 255.0f, 111.0f / 255.0f, 1.0f);
-    glClearDepth(0.0f);
-    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    //render player sprite and enemy sprite
+    renderSprite();
 
     glfwSwapBuffers(window);
 }
@@ -721,6 +646,7 @@ int main() {
     // Game loop
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClearDepth(1.0f);
 
         // Update and render
         timer();

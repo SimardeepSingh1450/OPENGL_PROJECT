@@ -18,17 +18,11 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Sprite.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="gl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Sprite.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -38,12 +32,8 @@
     <ClInclude Include="glad\gl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MemoryAndFileIO.h">
+    <ClInclude Include="utilityFunctions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="quad.vert" />
-    <None Include="quad.frag" />
   </ItemGroup>
 </Project>

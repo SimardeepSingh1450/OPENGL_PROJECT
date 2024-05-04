@@ -137,18 +137,12 @@
   <ItemGroup>
     <ClCompile Include="gl.c" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Sprite.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="constants.h" />
     <ClInclude Include="glad\gl.h" />
-    <ClInclude Include="MemoryAndFileIO.h" />
-    <ClInclude Include="Sprite.h" />
+    <ClInclude Include="utilityFunctions.h" />
     <ClInclude Include="stb_image.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="quad.frag" />
-    <None Include="quad.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
