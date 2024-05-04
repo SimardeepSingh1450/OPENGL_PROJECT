@@ -17,9 +17,6 @@ using namespace irrklang;
 //Audio engine
 ISoundEngine* engine;
 
-//Bump Allocator Code:
-BumpAllocator transientStorage;
-
 int last_frame_time = 0;
 GLFWwindow* window;
 
@@ -934,8 +931,6 @@ int main() {
     //Sound setup
     engine = createIrrKlangDevice();
     if (!engine) return 0;
-
-
 
     // Set the framebuffer size callback to handle window resizing
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
