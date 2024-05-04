@@ -51,8 +51,9 @@ void loadBackgroundTexture() {
 
 // Load sprite texture
 GLuint spriteTextureID, spriteKickTextureID;
-GLuint enemySpriteTextureID;
-void loadSpriteTexture() {
+GLuint enemySpriteTextureID, enemyKickTextureID;
+
+void loadPlayerIdleSprite() {
     int width, height, channels;
     unsigned char* image = stbi_load("./assets/goukenIdle.png", &width, &height, &channels, STBI_rgb_alpha); // Use STBI_rgb_alpha for PNG images with alpha channel
 
@@ -83,9 +84,42 @@ void loadSpriteTexture() {
 
     // Unbind texture
     glBindTexture(GL_TEXTURE_2D, 0);
+}
 
+void loadPlayerKickSprite() {
+    int width, height, channels;
+    unsigned char* image = stbi_load("./assets/goukenKick.png", &width, &height, &channels, STBI_rgb_alpha); // Use STBI_rgb_alpha for PNG images with alpha channel
 
-    //Enemy Sprite Load Logic
+    if (image == nullptr) {
+        printf("Failed to load sprite image.\n");
+        // Print more details about the error if available
+        printf("Error: %s\n", stbi_failure_reason());
+        exit(1);
+    }
+
+    glGenTextures(1, &spriteKickTextureID);
+    glBindTexture(GL_TEXTURE_2D, spriteKickTextureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image); // Use GL_RGBA for PNG images with alpha channel
+    stbi_image_free(image);
+
+    // Set texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // Set texture wrapping to repeat
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // Set texture filtering to linear
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Generate mipmaps
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    // Enable blending
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Unbind texture
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void loadEnemyIdleSprite() {
     int width2, height2, channels2;
     unsigned char* image2 = stbi_load("./assets/enemy.png", &width2, &height2, &channels2, STBI_rgb_alpha); // Use STBI_rgb_alpha for PNG images with alpha channel
 
@@ -116,6 +150,53 @@ void loadSpriteTexture() {
 
     // Unbind texture
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void loadEnemyKickSprite() {
+    int width2, height2, channels2;
+    unsigned char* image2 = stbi_load("./assets/enemySlap.png", &width2, &height2, &channels2, STBI_rgb_alpha); // Use STBI_rgb_alpha for PNG images with alpha channel
+
+    if (image2 == nullptr) {
+        printf("Failed to load sprite image.\n");
+        // Print more details about the error if available
+        printf("Error: %s\n", stbi_failure_reason());
+        exit(1);
+    }
+
+    glGenTextures(1, &enemyKickTextureID);
+    glBindTexture(GL_TEXTURE_2D, enemyKickTextureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width2, height2, 0, GL_RGBA, GL_UNSIGNED_BYTE, image2); // Use GL_RGBA for PNG images with alpha channel
+    stbi_image_free(image2);
+
+    // Set texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // Set texture wrapping to repeat
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // Set texture filtering to linear
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Generate mipmaps
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    // Enable blending
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Unbind texture
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void loadSpriteTexture() {
+    //Call Player Idle State Sprite
+    loadPlayerIdleSprite();
+
+    //Call Player Kick State Sprite
+    loadPlayerKickSprite();
+
+    //Call Enemy Idle State Sprite
+    loadEnemyIdleSprite();
+
+    //Call Enemy Kick State Sprite
+    loadEnemyKickSprite();
 }
 
 // ############################################## PLAYER AND ENEMY STRUCT DEFINATION #############################################
@@ -170,7 +251,7 @@ struct Enemy {
 
 void setup() {
     // ########################################### ALLOCATING PROPERTIES TO PLAYER AND ENEMY ##################################3
-    player.x = 200;
+    player.x = 300;
     player.y = 0;
     player.width = 50;
     player.height = 150;
@@ -180,7 +261,7 @@ void setup() {
     player.dKeyPressed = false;
     player.wKeyPressed = false;
     player.attackBoxHeight = 50;
-    player.attackBoxWidth = 100;
+    player.attackBoxWidth = 230;
     player.attackBoxPositionX = player.x;
     player.attackBoxPositionY = player.y;
     player.isAttacking = false;
@@ -241,9 +322,7 @@ void renderBackground() {
     glDisable(GL_TEXTURE_2D);
 }
 
-// Function to render the sprite
-void renderSprite() {
-
+void renderPlayerIdleSprite() {
     // Calculate texture coordinates
     float textureWidth = 1.0f;
     float textureHeight = 1.0f;
@@ -267,7 +346,35 @@ void renderSprite() {
     glEnd();
 
     glDisable(GL_TEXTURE_2D);
+}
 
+void renderPlayerKickSprite() {
+    // Calculate texture coordinates
+    float textureWidth = 1.0f;
+    float textureHeight = 1.0f;
+
+    // Render Player Sprite
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, spriteKickTextureID);
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); //Texture top-left cooridnate
+    glVertex2f(player.x, WINDOW_HEIGHT - player.y + 100);
+
+    glTexCoord2f(textureWidth, 0.0f); //Texture top-right cooridnate
+    glVertex2f(player.x + player.width + 200, WINDOW_HEIGHT - player.y + 100);
+
+    glTexCoord2f(textureWidth, textureHeight);
+    glVertex2f(player.x + player.width + 200, WINDOW_HEIGHT - (player.y + player.height));
+
+    glTexCoord2f(0.0f, textureHeight);
+    glVertex2f(player.x, WINDOW_HEIGHT - (player.y + player.height));
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+}
+
+void renderEnemyIdleSprite() {
     //Render Enemy Sprite
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, enemySpriteTextureID);
@@ -281,16 +388,61 @@ void renderSprite() {
     glVertex2f(enemy.x, WINDOW_HEIGHT - enemy.y + 90);
 
     glTexCoord2f(textureWidth2, 0.0f); //Texture top-right cooridnate
-    glVertex2f(enemy.x + enemy.width - 200, WINDOW_HEIGHT - enemy.y + 90);
+    glVertex2f(enemy.x + enemy.width - 230, WINDOW_HEIGHT - enemy.y + 90);
 
     glTexCoord2f(textureWidth2, textureHeight2);
-    glVertex2f(enemy.x + enemy.width - 200, WINDOW_HEIGHT - (enemy.y + enemy.height));
+    glVertex2f(enemy.x + enemy.width - 230, WINDOW_HEIGHT - (enemy.y + enemy.height));
 
     glTexCoord2f(0.0f, textureHeight2);
     glVertex2f(enemy.x, WINDOW_HEIGHT - (enemy.y + enemy.height));
     glEnd();
 
     glDisable(GL_TEXTURE_2D);
+}
+
+void renderEnemyKickSprite() {
+    //Render Enemy Sprite
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, enemyKickTextureID);
+
+    // Calculate texture coordinates
+    float textureWidth2 = 1.0f;
+    float textureHeight2 = 1.0f;
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); //Texture top-left cooridnate
+    glVertex2f(enemy.x, WINDOW_HEIGHT - enemy.y + 90);
+
+    glTexCoord2f(textureWidth2, 0.0f); //Texture top-right cooridnate
+    glVertex2f(enemy.x + enemy.width - 400, WINDOW_HEIGHT - enemy.y + 90);
+
+    glTexCoord2f(textureWidth2, textureHeight2);
+    glVertex2f(enemy.x + enemy.width - 400, WINDOW_HEIGHT - (enemy.y + enemy.height));
+
+    glTexCoord2f(0.0f, textureHeight2);
+    glVertex2f(enemy.x, WINDOW_HEIGHT - (enemy.y + enemy.height));
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+}
+
+// Function to render the sprite
+void renderSprite() {
+    //Player Idle State Sprite Render Call
+    if(glfwGetTime() - player.lastAttackTime > 0.3)
+        renderPlayerIdleSprite();
+
+    //Player Kick State Sprite Render Call
+    if(glfwGetTime() - player.lastAttackTime <= 0.3)
+        renderPlayerKickSprite();
+
+    //Enemy Idle State Sprite Render Call
+    if (glfwGetTime() - enemy.lastAttackTime > 0.3)
+        renderEnemyIdleSprite();
+
+    //Eenemy Kick State Sprite Render Call
+    if (glfwGetTime() - enemy.lastAttackTime <= 0.3)
+        renderEnemyKickSprite();
 }
 
 // ############################################# PROCESSING KEYBOARD INPUT ################################################
@@ -312,7 +464,7 @@ void process_input(int key, int, int) {
         break;
     case GLFW_KEY_SPACE:
         //printf("spacebar pressed\n");
-        if (glfwGetTime() - player.lastAttackTime >= 0.1) { // Check if enough time has passed since the last attack
+        if (glfwGetTime() - player.lastAttackTime >= 0.3) { // Check if enough time has passed since the last attack
             player.isAttacking = true;
             player.lastAttackTime = glfwGetTime(); // Update the last attack time
         }
@@ -377,8 +529,8 @@ void update() {
     }
 
     //Player-Attack Colision Detection
-    bool xCollisionCondition = player.attackBoxPositionX + player.attackBoxWidth >= enemy.x && player.attackBoxPositionX <= enemy.x + enemy.width;
-    bool yCollisionCondition = player.attackBoxPositionY + player.attackBoxHeight >= enemy.y && player.attackBoxPositionY <= (enemy.y + enemy.height);
+    bool xCollisionCondition = player.attackBoxPositionX + player.attackBoxWidth + 130 >= enemy.x && player.attackBoxPositionX <= enemy.x + enemy.width - 200;
+    bool yCollisionCondition = player.attackBoxPositionY + player.attackBoxHeight >= enemy.y - 100 && player.attackBoxPositionY - 100 <= (enemy.y + enemy.height);
     if (xCollisionCondition && yCollisionCondition && player.isAttacking == true) {
         //Reduce enemy health width
         enemy.healthBarWidth -= (float)(enemy.healthBarWidth * 0.10);
@@ -413,8 +565,8 @@ void update() {
     }
 
     //Enemy-Attack Collision Detection
-    bool xCollisionCondition2 = (enemy.x - 50) >= player.x && (enemy.x - 50) <= player.x + player.width;
-    bool yCollisionCondition2 = enemy.y + enemy.height >= player.y && player.y + player.height >= enemy.y;
+    bool xCollisionCondition2 = (enemy.x - 200) >= player.x && (enemy.x - 450) <= player.x + player.width;
+    bool yCollisionCondition2 = enemy.y + enemy.height + 30 >= player.y && player.y + player.height >= enemy.y - 50;
     if (xCollisionCondition2 && yCollisionCondition2 && enemy.isAttacking == true) {
         //Reduce player health width
         player.healthBarWidth -= (float)(player.healthBarWidth * 0.10);
@@ -452,10 +604,11 @@ void render() {
     glVertex2f(enemy.x + enemy.width, WINDOW_HEIGHT - enemy.y - enemy.height);
     glVertex2f(enemy.x, WINDOW_HEIGHT - enemy.y - enemy.height);
     glEnd();
-    */
+    
 
     //Player Attack Box
-    if (glfwGetTime() - player.lastAttackTime <= 0.1) {
+    
+    if (glfwGetTime() - player.lastAttackTime <= 0.3) {
         glColor3f(0.0f, 1.0f, 0.0f);
         glBegin(GL_QUADS);
         glVertex2f(player.x, WINDOW_HEIGHT - player.y);
@@ -464,6 +617,7 @@ void render() {
         glVertex2f(player.x, WINDOW_HEIGHT - player.y - player.attackBoxHeight);
         glEnd();
     }
+    
     //Enemy Attack Box
     if (glfwGetTime() - enemy.lastAttackTime <= 0.1) {
         glColor3f(0.0f, 1.0f, 0.0f);
@@ -474,6 +628,7 @@ void render() {
         glVertex2f(enemy.x - 50, WINDOW_HEIGHT - enemy.y - enemy.attackBoxHeight);
         glEnd();
     }
+    */
 
     //Drawing Health bars
     //Player Health Bar
